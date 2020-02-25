@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.com/mewertd2/Multivectors.jl.svg?branch=master)](https://travis-ci.com/mewertd2/Multivectors.jl)
+[![codecov.io](https://codecov.io/github/mewertd2/Multivectors.jl/coverage.svg?branch=master)](https://codecov.io/github/mewertd2/Multivectors.jl?branch=master)
+
 # Multivectors
 
 The `Multivectors` [Julia](http://julialang.org) package defines the `Multivector` Type
@@ -158,7 +161,7 @@ We assume `q` is normalized.
 In order for the `q` to act on (multi)vectors not neccesarily in the plane of rotation, we treat it as a versor.
 
 A quaternion is a versor, simply means that you use the sandwich product when transforming an object with it.
-Using the sandwich product we multiply by `q` twice and will end up rotating by twice the angle.  So we modify our initial construction rule to `q = normalize(â+b̂)/b̂`.
+Using the sandwich product we multiply by `q` twice and will end up rotating by twice the angle.  So we modify our initial construction rule to `q = normalize(â+b̂)/b̂`.
 
 Now we get a familiar quaternion transformation rule `q̃*v*q`.  
 Where we use `q̃` to indicate the reverse of `q`, which acts like complex conjugation and flips the sign of grade 2 blades.  
