@@ -198,6 +198,38 @@ Depending on the specific Geometric Algebra in use it may be desireable to defin
 
 Most operators and methods defined for `KVectors` and `Blades` work on `Multivectors` through either linearity (extended via vector space `+` and scalar `*` ) or outermorphism (extended via `∧`).
 
+## Performance and Design
+
+Blades, KVectors and Multivectors, in it's current iteration, is designed for exploring and prototyping novel algorithms in the emerging field of Applied Geometric Algebra with a focus on Computer Base Animation ( CGI ).  While the foundational Types are optimally performant, some work is needed to extend that performance through the rest of the Types.
+
+[Blades](https://github.com/mewertd2/Blades.jl) have been designed and implemented with optimal performance in mind.  Operations on simple Blades have around the same performance as similar operations on native scalars.
+
+    julia> x = sqrt(2.0); y = exp(1.0); ex = e₂₃(x); ey = e₁₃(y);
+
+    julia> @btime x*y
+      23.008 ns (1 allocation: 16 bytes)
+    3.844231028159117
+
+    julia> @btime ex*ey
+      26.635 ns (1 allocation: 16 bytes)
+    3.844231028159117e₁₂
+
+This is accomplished with Julia's metaprogramming features.  We effectively leverage Julia's Type system and compiler to do the heavy lifting for us by creating unqiue Types for each Blade.
+
+    julia> (typeof(ex), typeof(ey), typeof(ex) == typeof(ey))
+    (e₂₃{Float64}, e₁₃{Float64}, false)
+
+This performance minded design has not been extended to KVectors or Multivectors.  
+The intention is to keep Blades, KVectors and Multivectors as a general reference implementation of Geometric Algebra.  
+The main hurdle to achieving performance is to give Julia enough Type information to effectively optimize the code while still maintaining flexibility and ease of use for our Types.
+Since we rely on the Julia compiler/parser to achieve performance, it could be that future versions of Julia will optimize KVectors and Multivectors (to a certain extent) for us.
+
+Future versions or new packages implementing KVectors and Multivectors will be performant.  
+
+Truely great performance will likely require specializing on a fixed algebra or set of objects (for an example of this approach: [Klein](https://github.com/jeremyong/Klein)).
+
+## Related Packages
+
 See the documentation of [KVectors](https://github.com/mewertd2/KVectors.jl) and [Blades](https://github.com/mewertd2/Blades.jl) for more information.
 
 ## Project Information

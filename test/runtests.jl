@@ -26,18 +26,9 @@ using KVectors
 using Blades
 using LinearAlgebra
 
-module PG3
-  using Blades
-  @generate_basis("+++0")
-end
-
-module G4
-  using Blades
-  @generate_basis("++++")
-end
 
 module PG2
-  using Blades, KVectors
+  using Blades, KVectors, Multivectors, LinearAlgebra
   @generate_basis("++0")
 
   const eₒ_index = 3
@@ -67,8 +58,13 @@ module PG2
   
 end
 
+using .PG2
+@testset "PG2" begin
+  @test PG2.circumcentre( PG2.point(0.0, 0.0), PG2.point(1.0,0.0), PG2.point(0.0,1.0) ) == PG2.point(0.5, 0.5)
+end
+
 module HomogeneousG2
-  using Blades, KVectors
+  using Blades, KVectors, Multivectors, LinearAlgebra
   @generate_basis("+++")
 
   const eₒ_index = 3
@@ -105,6 +101,12 @@ module HomogeneousG2
   end
 end
 
+using .HomogeneousG2
+@testset "HomogeneousG2" begin
+  pointh = HomogeneousG2.point
+  @test HomogeneousG2.circumcentre( pointh(0.0, 0.0), pointh(1.0,0.0), pointh(0.0,1.0) ) == pointh(0.5, 0.5)
+end
+
 module CGA
   using Blades, KVectors, LinearAlgebra
   
@@ -117,21 +119,7 @@ module CGA
   circumcentre( a, b, c) = locate(a, (a∧b + b∧c + c∧a)/(a∧b∧c∧e∞))
 end
 
-module G2
-  using Blades
-  @generate_basis("++",false,true,true)
-end
-
-module G3
-  using Blades
-  @generate_basis("+++",false,true,true)
-end
-
-using .PG3
-using .G2
-using .G3
 using .CGA
-using .G4
 
 @testset "CGA3D" begin
   e₁, e₂, e₃ = alle( CGA, 5 )[1:3]
@@ -156,7 +144,11 @@ using .G4
   @test norm(ccentre - grade(a,1)) ≈ norm(ccentre - grade(b,1)) ≈ norm(ccentre - grade(c,1))
 end
 
-
+module PG3
+  using Blades
+  @generate_basis("+++0")
+end
+using .PG3
 @testset "PGA3D" begin
   e₁, e₂, e₃, e₄ = alle( PG3, 4)[1:4]
   e₁₂ = PG3.e₁₂; e₃₄ = PG3.e₃₄; e₁₂₃₄ = PG3.e₁₂₃₄;
@@ -200,9 +192,17 @@ end
   # linearity in first argument 
   @test (A+B)⋅C == (A⋅C)+(B⋅C) 
 
-
+  @test 2*A×B == (A*B-B*A)
+  A = 2-A
+  B = 2*B + 3(e₂∧e₃)
+  @test 2A×B == (A*B-B*A)
 end
 
+module G4
+  using Blades
+  @generate_basis("++++")
+end
+using .G4
 @testset "contraction" begin
 
   e₁, e₂, e₃, e₄  = alle( G4, 4)[1:4]
@@ -217,6 +217,11 @@ end
 
 end
 
+module G3
+  using Blades
+  @generate_basis("+++",false,true,true)
+end
+using .G3
 @testset "Quaternion" begin
 
   e₁, e₂, e₃, e₁₂, e₁₃, e₂₃, e₁₂₃ = alle( G3, 3)
