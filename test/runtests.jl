@@ -214,6 +214,33 @@ using .G4
   @test a⋅(a⋅B) == 0.0
   B = B + rand()*(e₃∧e₄)
   @test a⋅(a⋅B) == 0.0
+  
+
+  A = 1.0 + 3.0G4.e₁₃
+  @test lcontraction(a,A) == a⋅A
+  @test rcontraction(A,a) == (A*a)[grade(A)-grade(a)]
+  @test grades(A) == [0,2]
+  show(A)
+  @test first(A) == 1.0
+  @test [i for i in A] == map(i->i, A) |>collect == (i for i in A) |> collect 
+  @test length(A) == 2
+  @test mapreduce(identity, +, A) == A
+  @test mapreduce(conj, +, A) == conj(A)
+  @test 1.0e₁ + A[2] + A[0] == A + 1.0e₁ 
+  @test iszero(grade(A,10))
+  @test grades(1.0) == [0]
+  @test grade(1.0, 0) == 1.0
+  @test grade(1.0, 1) == 0.0
+  @test grades(A[2]) == [2]
+  @test prune(dual(A)*pseudoscalar(A[2])) == A
+  @test A/2.0 == A*0.5 
+  @test A[2] == A-A[0]
+  @test mapreduce(LinearAlgebra.norm_sqr, +, A) == scalarprod(A,reverse(A)) == 10.0
+  @test normalize(A) == A/sqrt(scalarprod(A,reverse(A)))
+
+  for i in A
+    show(i)
+  end
 
 end
 

@@ -45,7 +45,7 @@ import Blades.∧
 import KVectors.prune
 
 second(c) = c[2]
-partial(f::Function, y...) = (z...)->f(y...,z...)
+Blades.magnitude(s::Real) = s
 
 const KVectorVector{T} = Vector{KVector{T}}
 
@@ -105,6 +105,8 @@ Base.firstindex(M::Multivector{T,N}) where {T,N} = 0
 Base.lastindex(M::Multivector{T,N}) where {T,N} = N
 StaticArrays.setindex(M::MV, v, i) where {MV<:Multivector} = 
   iszero(i) ? MV(v, M.B) : MV(M.s, setindex(M.B,v,i))
+
+Base.first(M::Multivector{T,N}) where {T,N} = M.s
 
 function Base.iterate( A::Multivector )
   g = grades(A)
@@ -195,7 +197,7 @@ function grades(M::Multivector{T,N}) where {T,N}
 end
 
 grades(a::CliffordNumber) = grades(Multivector(a))
-grades(s::Real) = [s]
+grades(s::Real) = [0]
 
 """
     grade(M)
@@ -273,8 +275,8 @@ The contraction A⌋B of an a-blade A onto a b-blade B is a sub-blade of B with 
 The returned multivector, k-vector or blade will be the part of A contained in B and also orthogonal to A's projection on B.  
 When one considers a scalar to be orthogonal to a 1-vector.  The standard dot product ⋅ defined on 1-vectors in fact does just this.  A scalar on a 1-vector is indeed orthogonal to any vectors projection on that vector. 
 """
-lcontraction(A::M,B::N) where {M<:Multivector,N<:Multivector} = A⋅B
-rcontraction(A::M,B::N) where {M<:Multivector,N<:Multivector} = grade(A*B,grade(A)-grade(B))
+lcontraction(A::M,B::N) where {M<:CliffordNumberR, N<:CliffordNumberR} = A⋅B
+rcontraction(A::M,B::N) where {M<:CliffordNumberR, N<:CliffordNumberR} = grade(A*B,grade(A)-grade(B))
 
 import LinearAlgebra: norm, normalize, norm_sqr
 norm_sqr(A::M) where {M<:Multivector} = grade(A*reverse(A), 0)
