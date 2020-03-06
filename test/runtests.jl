@@ -141,7 +141,14 @@ using .CGA
   c = point((sqrt(3.0)/2.0)e₂)
   ccentre = grade(circumcentre(a,b,c), 1) 
 
+  @test length(a.B) >= length(prune(a).B)
+  @test iszero(prune(a-a))
   @test norm(ccentre - grade(a,1)) ≈ norm(ccentre - grade(b,1)) ≈ norm(ccentre - grade(c,1))
+
+  i = 1.0e₁+2.0e₂; j = 3.0(e₁∧e₃) + 4.0(e₂∧e₃); k = KVector(5.0CGA.e₂₃₄)
+  @test i+j == Multivector(i) + Multivector(j) == j+i == Multivector(i) + j == i + Multivector(j)
+  @test i+j+k == i+(j+k) == (i+k)+j 
+
 end
 
 module PG3

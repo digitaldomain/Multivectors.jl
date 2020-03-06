@@ -63,6 +63,19 @@ const CliffordNumberR = Union{Blade, KVector, Multivector, Real}
   :(Multivector{$T,$N}(zero($T), $B))
 end
 
+function Multivector(k::KVector{T,K}) where {T,K} 
+  B = KVector{T}[KVector{T,i,0}() for i in 1:K]
+  B[K] = k 
+  Multivector{T,K}(zero(T), B)
+end
+
+#==
+@generated function Multivector(k::KVector{T,K}) where {T,K} 
+  B = KVector{T}[KVector{T,i,0}() for i in 1:K]
+  :(begin $B[$K] = k; Multivector{$T,$K}(zero($T), $B); end)
+end
+==#
+
 function Multivector(s::T, a::AbstractVector{KVector{T}}) where {T<:Number}
   g = grade.(a)
   N = reduce(max,g)
@@ -73,9 +86,8 @@ end
 
 Multivector(a::AbstractVector{KVector{T}}) where {T<:Number} = Multivector(zero(T), a)
 
-Multivector(a::Blade{T}) where T = Multivector(KVectorVector{T}([KVector(a)]))
-Multivector(B::KVector{T}) where T = Multivector(KVectorVector{T}([B]))
-Multivector(s::T) where {T<:Real} = Multivector{T,0}(s, Vector{KVector{T}}())
+Multivector(a::Blade{T}) where T = Multivector(KVector{T}[KVector(a)])
+Multivector(s::T) where {T<:Real} = Multivector{T,0}(s, KVector{T}[])
 
 function Base.show(io::IO, M::Multivector{T,N}) where {T,N}
   tosub = Dict(0=>'₀',1=>'₁',2=>'₂',3=>'₃',4=>'₄',5=>'₅',6=>'₆',7=>'₇',8=>'₈', 9=>'₉')
@@ -131,28 +143,64 @@ mapreduce(f, r, m::Multivector) = reduce(r, (f(k) for k in m))
 
 Base.conj(m::Multivector) = mapreduce(conj, +, m)
 
-Base.:+(b::KVector{T,K}, c::Multivector{T,L}) where {T,K,L} = Multivector(KVectorVector{T}([b])) + c
+Base.:+(b::KVector{T,K}, c::Multivector{T,L}) where {T,K,L} = Multivector(b) + c
 Base.:+(c::Multivector{T,K}, b::KVector{T,L}) where {T,K,L} = b+c
 
-Base.:+(k::Blade{T,K}, c::Multivector{T,N}) where {T,N,K} = Multivector(KVectorVector{T}([KVector(k)])) + c
+Base.:+(k::Blade{T,K}, c::Multivector{T,N}) where {T,N,K} = Multivector(KVector(k)) + c
 Base.:+(c::Multivector{T,K}, v::Blade{T,L}) where {T,K,L} = v+c
 
 Base.:+(c::Multivector{T,K}, s::T) where {T<:Number,K} = Multivector{T,K}(c.s+s,c.B)
 Base.:+(s::R, c::Multivector{T,K}) where {T,R<:Real,K} = c+s
 
-Base.:+(b::KVector{T,K}, c::KVector{T,L}) where {T,K,L} = Multivector(KVectorVector{T}([b,c]))
+#Base.:+(b::KVector{T,K}, c::KVector{T,L}) where {T,K,L} = Multivector{T,K}(KVector{T}[b,c])
+#Base.:+(b::KVector{T,K}, c::KVector{T,L}) where {T,K,L} = Multivector{T,K}(KVector{T}[b,c])
+#==
+function Base.:+(b::KVector{T,K}, c::KVector{T,L}) where {T,K,L} 
+  B = KVector{T}[KVector{T,i,0}() for i in 1:max(K,L)]
+  B[K] = b
+  B[L] = c
+  Multivector{T,max(K,L)}(zero(T), B)
+end
+==#
+@generated function Base.:+(b::KVector{T,K}, c::KVector{T,L}) where {T,K,L} 
+  B = KVector{T}[KVector{T,i,0}() for i in 1:max(K,L)]
+  KL = max(K,L)
+  :(begin $B[$K] = b; $B[$L] = c; Multivector{$T,$KL}(zero($T), $B); end)
+end
 
 Base.:+(c::KVector{T,L}, s::R) where {T,R<:Real,K,L} = s + c
 
 function Base.:+(M::Multivector{T,NM}, N::Multivector{T,NN}) where {T,NM,NN}
+  if NM >= NN
+    kv = copy(M.B)
+    for i in 1:NN
+      kv[i] = kv[i] + N.B[i]
+    end
+    Multivector{T,NM}(M.s+N.s, kv)
+  else
+    kv = copy(N.B)
+    for i in 1:NM
+      kv[i] = kv[i] + M.B[i]
+    end
+    Multivector{T,NN}(M.s+N.s, kv)
+  end
+
+  #==
   n = max(NM,NN)
   if NM == NN
-    Multivector{T,n}( M.s+N.s, [ M[i]+N[i] for i in 1:n ] )
+    kv = KVector{T}[]
+    sizehint!(kv,n)
+    for i in 1:n
+      push!(kv, M[i]+N[i])
+    end
+    Multivector{T,n}( M.s+N.s, kv )
+    #Multivector{T,n}( M.s+N.s, KVector{T}[ M[i]+N[i] for i in 1:n ] )
   elseif NM < NN
-    Multivector{T,n}( M.s+N.s, [ (M[i]+N[i] for i in 1:NM)..., N[max(NM+1,1):end]... ] )
+    Multivector{T,n}( M.s+N.s, KVector{T}[ (M[i]+N[i] for i in 1:NM)..., N[max(NM+1,1):end]... ] )
   else
-    Multivector{T,n}( M.s+N.s, [ (M[i]+N[i] for i in 1:NN)..., M[max(NN+1,1):end]... ] )
+    Multivector{T,n}( M.s+N.s, KVector{T}[ (M[i]+N[i] for i in 1:NN)..., M[max(NN+1,1):end]... ] )
   end
+  ==#
 end
 
 Base.:+(b::Blade{T,K}, c::Blade{T,L}) where {T<:Number,K,L} = KVector(b)+KVector(c)
@@ -287,8 +335,13 @@ normalize(A::M) where {M<:Multivector} = A/norm(A)
 Base.inv(b::B) where {B<:KVector} = reverse(b)/grade((b*reverse(b)), 0)
 Base.inv(v::M) where {M<:Multivector} = reverse(v)/grade((v*reverse(v)), 0)
 
+scalarscalar(m::M) where M<:Multivector = mapreduce(scalarscalar, +, m) 
+scalarscalar(k::K) where K<:KVector = mapreduce((x->x*x)∘scalar, +, k)
+scalarscalar(b::B) where B<:Blade = b.x*b.x
+scalarscalar(s::R) where R<:Real = s*s
+
 prune(s::Real, epsi = eps()) = abs(s) < epsi ? zero(s) : s
-prune(A::M, epsi = eps()) where {M<:Multivector} = 
-  sum(Iterators.filter(k->norm_sqr(k) > epsi*epsi, map(prune, A)))
+prune(A::M, epsi = eps()) where {T, M<:Multivector{T}} = 
+  reduce(+, Iterators.filter(k->scalarscalar(k) > epsi*epsi, map(prune, A)); init=zero(T))
 
 end # module
