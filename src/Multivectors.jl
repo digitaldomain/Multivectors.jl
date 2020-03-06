@@ -290,15 +290,16 @@ scalarprod(A::M,B::N) where {M<:Multivector,N<:Multivector} = grade(A*B,0)
 scalarprod(A::M,B::N) where {M<:Multivector,N<:KVector}       = grade(A*Multivector(B),0)
 scalarprod(A::M,B::N) where {M<:KVector,N<:Multivector}       = grade(Multivector(A)*B,0)
 scalarprod(A::M,B::N) where {M<:KVector,N<:KVector}             = grade(Multivector(A)*Multivector(B),0)
-∧(A::M,B::N) where {M<:Multivector,N<:Multivector} = grade(A*B, grade(A)+grade(B))
-∧(A::M,B::N) where {M<:CliffordNumber,N<:CliffordNumber}       = Multivector(A)∧Multivector(B)
-∧(A::M,B::M) where {M<:Number}                     = grade(Multivector(A*B),2grade(M))
-LinearAlgebra.:(⋅)(A::M,B::N) where {M<:Multivector,N<:Multivector} = grade(A*B,grade(B)-grade(A))
-LinearAlgebra.:(⋅)(A::M,B::N) where {M<:Multivector,N<:KVector}       = A⋅Multivector(B)
-LinearAlgebra.:(⋅)(A::M,B::N) where {M<:KVector,N<:Multivector}       = Multivector(A)⋅B
-LinearAlgebra.:(⋅)(A::M,B::N) where {M<:KVector,N<:KVector}             = Multivector(A)⋅Multivector(B)
-LinearAlgebra.:(⋅)(A::M,B::N) where {M<:KVector,N<:Blade}             = grade(A*B,grade(B)-grade(A))
-LinearAlgebra.:(⋅)(A::M,B::N) where {M<:Blade,N<:KVector}             = grade(A*B,grade(B)-grade(A))
+
+# this works right?  only way to get a grade(A) + grade(B) basis is through ∧ any other grade will be <
+# what about reciprocal basis?
+∧(A::M,B::N) where {M<:CliffordNumber,N<:CliffordNumber} = grade(A,grade(A))∧grade(B,grade(B))
+#∧(A::M,B::N) where {M<:CliffordNumber,N<:CliffordNumber}       = grade(A*B, grade(A)+grade(B))
+
+LinearAlgebra.:(⋅)(A::M,B::N) where {M<:CliffordNumber,N<:CliffordNumber} = grade(A*B,grade(B)-grade(A))
+LinearAlgebra.:(⋅)(A::M,B::N) where {M<:KVector,N<:KVector} = grade(A*B,grade(B)-grade(A))
+LinearAlgebra.:(⋅)(A::M,B::N) where {M<:KVector,N<:Blade}   = grade(A*B,grade(B)-grade(A))
+LinearAlgebra.:(⋅)(A::M,B::N) where {M<:Blade,N<:KVector}   = grade(A*B,grade(B)-grade(A))
 
 """
   ∨(a,b)

@@ -178,6 +178,15 @@ using .PG3
   @test B*B == a*a+a*b+b*a+b*b
   @test grade((2e₂+3e₃)*(2e₂+3e₃), 0) == 2*2+3*3
 
+  # degenerate wedge
+  D = 1.0 + 2.0e₄ 
+  E = 2.0 + 3.0(e₁∧e₄)
+  @test grade(D∧E, 3) == grade(D*E, 3)
+  F = 1.0 + 2.0e₃
+  G = 2.0 + 3.0(e₁∧e₃)
+  @test grade(F∧G, 3) == grade(F*G, 3)
+  @test grade(D∧G, 3) == grade(D*G, 3)
+
   A = 2e₃ +3e₂
   B = 5e₄+6e₃
   # if we had an e₁ (degen metric) component this would not be true.
@@ -249,6 +258,10 @@ using .G4
     show(i)
   end
 
+  a = 1.0 + 1.5(e₁) + 2.0(e₁∧e₂) 
+  b = 1.0 + 2.5(e₁∧e₂∧e₄) + 3.0(e₁∧e₂∧e₃∧e₄)
+  @test a⋅b == grade(a*b, grade(b)-grade(a))
+  @test a∧b == grade(a*b, grade(b)+grade(a))
 end
 
 module G3
