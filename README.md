@@ -232,6 +232,8 @@ Truely great performance will likely require specializing on a fixed algebra or 
 
 See the documentation of [KVectors](https://github.com/mewertd2/KVectors.jl) and [Blades](https://github.com/mewertd2/Blades.jl) for more information.
 
+[Grassmann](https://github.com/chakravala/Grassmann.jl) is another julia package that implements a Geometric Algebra in the context of a wider algebraic framework.
+
 ## Project Information
 
 ### Contributing
