@@ -1,9 +1,9 @@
-                KVectors.jl  
+                Multivectors.jl  
                 Digial Domain 3.0  
 
                 Software Grant and Corporate Contributor License Agreement ("Agreement")  
 
-Thank you for your interest in the KVectors.jl Project ("Project"), a Digital Domain 3.0 open source initiative.  In order to clarify the intellectual property license granted with Contributions from any person or entity, Digital Domain 3.0 must have a Contributor License Agreement ("CLA" or "Agreement") on file that has been signed by each Contributor, indicating agreement to the license terms below.   
+Thank you for your interest in the Multivectors.jl Project ("Project"), a Digital Domain 3.0 open source initiative.  In order to clarify the intellectual property license granted with Contributions from any person or entity, Digital Domain 3.0 must have a Contributor License Agreement ("CLA" or "Agreement") on file that has been signed by each Contributor, indicating agreement to the license terms below.   
 
 This CLA is modified from the Apache CLA found here: http://www.apache.org/licenses.  
 
@@ -12,7 +12,7 @@ This license is for your protection as a Contributor as well as the protection o
 If you have not already done so, please complete and sign, then scan and email a pdf file of this Agreement to opensource@d2.com.  If necessary, send an original signed Agreement to:  
 
 Digial Domain 3.0  
-Attn: The KVectors.jl Project  
+Attn: The Multivectors.jl Project  
 12641 Beatrice Street
 Los Angeles, CA 90066  
 U.S.A.  
