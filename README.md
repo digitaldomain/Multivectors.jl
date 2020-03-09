@@ -4,7 +4,7 @@
 # Multivectors
 
 The `Multivectors` [Julia](http://julialang.org) package defines the `Multivector` Type
-to represent mixed-grade linear combinations of `KVectors`[KVectors](./KVectors_README.md), which are in turn a vector space of [Blades](./Blades_README.md) of a given grade.
+to represent mixed-grade linear combinations of [KVectors](./KVectors_README.md), which are in turn a vector space of [Blades](./Blades_README.md) of a given grade.
 `Multivectors` is intended to be an implementation of Geometric Algebra [Geometric Algebra](https://en.wikipedia.org/wiki/Geometric_algebra), although it is useful for any Clifford algebra.  Where operator or naming conventions differ, the ones from Geometric Algebra most closely aligned to conventions used in Computer Science will be used.
 
 ## Geometric Product
@@ -196,7 +196,7 @@ Rotors can be constructed using half-angle of trig functions, like quaternions.
 
 Depending on the specific Geometric Algebra in use it may be desireable to define other operators.  For example `meet` and `join` operators are very useful, but will differ depending on the context.  Where there are multiple possible definitions/implementations of an operator, `Multivectors` chooses to omit such an operator rather than include it.
 
-Most operators and methods defined for `KVectors` and `Blades` work on `Multivectors` through either linearity (extended via vector space `+` and scalar `*` ) or outermorphism (extended via `∧`).
+Most operators and methods defined for [KVectors](./KVectors_README.md) and [Blades](./Blades_README.md) work on `Multivectors` through either linearity (extended via vector space `+` and scalar `*` ) or outermorphism (extended via `∧`).
 
 ## Performance and Design
 
