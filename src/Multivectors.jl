@@ -36,16 +36,9 @@ using StaticArrays
 using SparseArrays
 using LinearAlgebra
 
-using Blades
-using KVectors
+include("KVectors.jl")
 
-import Blades.grade
-import Blades.dual
-import Blades.∧
-import KVectors.prune
-
-second(c) = c[2]
-Blades.magnitude(s::Real) = s
+magnitude(s::Real) = s
 
 const KVectorVector{T} = Vector{KVector{T}}
 

@@ -22,13 +22,13 @@
 
 using Test
 using Multivectors
-using KVectors
-using Blades
 using LinearAlgebra
 
+include("Blades_runtests.jl")
+include("KVectors_runtests.jl")
 
 module PG2
-  using Blades, KVectors, Multivectors, LinearAlgebra
+  using Multivectors, LinearAlgebra
   @generate_basis("++0")
 
   const eₒ_index = 3
@@ -64,7 +64,7 @@ using .PG2
 end
 
 module HomogeneousG2
-  using Blades, KVectors, Multivectors, LinearAlgebra
+  using Multivectors, LinearAlgebra
   @generate_basis("+++")
 
   const eₒ_index = 3
@@ -108,7 +108,7 @@ using .HomogeneousG2
 end
 
 module CGA
-  using Blades, KVectors, LinearAlgebra
+  using Multivectors, LinearAlgebra
   
   @generate_basis("++++-",false,true)
   const eo = 0.5*(1.0e₄ + 1.0e₅)
@@ -152,7 +152,7 @@ using .CGA
 end
 
 module PG3
-  using Blades
+  using Multivectors 
   @generate_basis("+++0")
 end
 using .PG3
@@ -215,7 +215,7 @@ using .PG3
 end
 
 module G4
-  using Blades
+  using Multivectors 
   @generate_basis("++++")
 end
 using .G4
@@ -265,7 +265,7 @@ using .G4
 end
 
 module G3
-  using Blades
+  using Multivectors 
   @generate_basis("+++",false,true,true)
 end
 using .G3

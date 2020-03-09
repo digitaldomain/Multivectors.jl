@@ -4,12 +4,12 @@
 # Multivectors
 
 The `Multivectors` [Julia](http://julialang.org) package defines the `Multivector` Type
-to represent mixed-grade linear combinations of `KVectors`[KVectors](https://github.com/mewertd2/KVectors.jl), which are in turn a vector space of [Blades](https://github.com/mewertd2/Blades.jl) of a given grade.
+to represent mixed-grade linear combinations of `KVectors`[KVectors](./KVectors_README.md), which are in turn a vector space of [Blades](./Blades_README.md) of a given grade.
 `Multivectors` is intended to be an implementation of Geometric Algebra [Geometric Algebra](https://en.wikipedia.org/wiki/Geometric_algebra), although it is useful for any Clifford algebra.  Where operator or naming conventions differ, the ones from Geometric Algebra most closely aligned to conventions used in Computer Science will be used.
 
 ## Geometric Product
 
-`Multivectors` essentially extends the algebras and Types defined in [Blades](https://github.com/mewertd2/Blades.jl) and [KVectors](https://github.com/mewertd2/KVectors.jl) with `*`, the [Geometric Product](https://en.wikipedia.org/wiki/Geometric_algebra#The_geometric_product).
+`Multivectors` essentially extends the algebras and Types defined as [Blades](./Blades_README.md) and [KVectors](./KVectors_README.md) with `*`, the [Geometric Product](https://en.wikipedia.org/wiki/Geometric_algebra#The_geometric_product).
 
 There are many other operators defined, but the geometric product is fundamental.  In fact, we could go back and redefine the wedge `∧` and inner products `⋅` using the geometric product.
 
@@ -42,7 +42,7 @@ This is a generalization of the inner product ( dot product ) from vector algebr
 
 ### Barycentric coordinates
 
-    julia> using Blades,KVectors,Multivectors
+    julia> using Multivectors
 
     julia> @generate_basis("+++", true)  # generate blades for euclidean 3D-space
 
@@ -115,10 +115,10 @@ Better practice is to namespace a basis within it's own module.
 
 Behold, the barycentric coordinates of a pentachoron.
 
-    julia> using Blades,KVectors,Multivectors
+    julia> using Multivectors
 
     julia> module R4
-             using Blades
+             using Multivectors
              @generate_basis("++++")  # 4D euclidean space
            end
 
@@ -202,7 +202,7 @@ Most operators and methods defined for `KVectors` and `Blades` work on `Multivec
 
 Blades, KVectors and Multivectors, in it's current iteration, is designed for exploring and prototyping novel algorithms in the emerging field of Applied Geometric Algebra with a focus on Computer Base Animation ( CGI ).  While the foundational Types are optimally performant, some work is needed to extend that performance through the rest of the Types.
 
-[Blades](https://github.com/mewertd2/Blades.jl) have been designed and implemented with optimal performance in mind.  Operations on simple Blades have around the same performance as similar operations on native scalars.
+[Blades](./Blades_README.md) have been designed and implemented with optimal performance in mind.  Operations on simple Blades have around the same performance as similar operations on native scalars.
 
     julia> x = sqrt(2.0); y = exp(1.0); ex = e₂₃(x); ey = e₁₃(y);
 
@@ -228,9 +228,9 @@ Future versions or new packages implementing KVectors and Multivectors will be p
 
 Truely great performance will likely require specializing on a fixed algebra or set of objects (for an example of this approach: [Klein](https://github.com/jeremyong/Klein)).
 
-## Related Packages
+## Related Packages/Types
 
-See the documentation of [KVectors](https://github.com/mewertd2/KVectors.jl) and [Blades](https://github.com/mewertd2/Blades.jl) for more information.
+See the documentation of [KVectors](./KVectors_README.md) and [Blades](./Blades_README.md) for more information.
 
 [Grassmann](https://github.com/chakravala/Grassmann.jl) is another julia package that implements a Geometric Algebra in the context of a wider algebraic framework.
 

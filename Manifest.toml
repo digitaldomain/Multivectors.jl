@@ -3,12 +3,6 @@
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
-[[Blades]]
-deps = ["Combinatorics", "FunctionWrappers", "LinearAlgebra", "Test"]
-git-tree-sha1 = "7e1ff6c583e2499b1b7befd073f63728ff63af22"
-uuid = "ab78ad86-d995-11e9-19c2-2d9731c36d75"
-version = "0.1.0"
-
 [[Combinatorics]]
 deps = ["Polynomials"]
 git-tree-sha1 = "140cc833258df8e5aafabdb068875ac0c256be23"
@@ -27,12 +21,6 @@ version = "1.1.1"
 [[InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
-
-[[KVectors]]
-deps = ["Blades", "LinearAlgebra", "StaticArrays", "Test"]
-git-tree-sha1 = "710303bb4ab4eeb4c62215ce57f35ba528ad2486"
-uuid = "41ef3c92-da78-11e9-207c-f32a9899af8c"
-version = "0.1.0"
 
 [[Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
@@ -75,9 +63,9 @@ uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "1085ffbf5fd48fdba64ef8e902ca429c4e1212d3"
+git-tree-sha1 = "5a3bcb6233adabde68ebc97be66e95dcb787424c"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "0.11.1"
+version = "0.12.1"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
