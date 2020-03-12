@@ -5,7 +5,10 @@
 
 The `Multivectors` [Julia](http://julialang.org) package defines the `Multivector` Type
 to represent mixed-grade linear combinations of [KVectors](./KVectors_README.md), which are in turn a vector space of [Blades](./Blades_README.md) of a given grade.
-`Multivectors` is intended to be an implementation of Geometric Algebra [Geometric Algebra](https://en.wikipedia.org/wiki/Geometric_algebra), although it is useful for any Clifford algebra.  Where operator or naming conventions differ, the ones from Geometric Algebra most closely aligned to conventions used in Computer Science will be used.
+`Multivectors` is intended to be an implementation of [Geometric Algebra](https://en.wikipedia.org/wiki/Geometric_algebra), although it is useful for any Clifford algebra.  
+Where operator or naming conventions differ, the ones from Geometric Algebra most closely aligned to conventions used in Computer Science will be used.
+
+It is recommended to read the documentation on [Blades](./Blades_README.md) and [KVectors](./KVectors_README.md) first.
 
 ## Geometric Product
 
