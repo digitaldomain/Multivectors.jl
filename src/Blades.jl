@@ -714,6 +714,7 @@ e.g. lower(1e¹²₃) == 1e₁₂₃
 end
 
 lower( k::K ) where {K<:Blade} = lower(K)(k.x)
+lower( s::T ) where T<:Real = s
 
 """
     raise(k)
@@ -729,6 +730,7 @@ assumes you have generated a dual basis, i.e. @generate_basis("...", _, true)
 end
 
 raise( k::K ) where {K<:Blade} = raise(K)(k.x)
+raise( s::T ) where T<:Real = s
 
 """
     grade(b)
