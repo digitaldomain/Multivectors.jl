@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.com/mewertd2/Multivectors.jl.svg?branch=master)](https://travis-ci.com/mewertd2/Multivectors.jl)
-[![codecov.io](https://codecov.io/github/mewertd2/Multivectors.jl/coverage.svg?branch=master)](https://codecov.io/github/mewertd2/Multivectors.jl?branch=master)
+[![Build Status](https://travis-ci.com/digitaldomain/Multivectors.jl.svg?branch=master)](https://travis-ci.com/digitaldomain/Multivectors.jl)
+[![codecov.io](https://codecov.io/github/digitaldomain/Multivectors.jl/coverage.svg?branch=master)](https://codecov.io/github/digitaldomain/Multivectors.jl?branch=master)
 
 # Multivectors
 
