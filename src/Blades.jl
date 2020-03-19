@@ -794,6 +794,8 @@ Base.:(==)(a::A, s::T) where {A<:Blade, T<:Real} = iszero(a.x) && iszero(s)
 Base.:(==)(s::T, a::A) where {A<:Blade, T<:Real} = a==s 
 Base.abs(b::B) where {B<:Blade} = B(abs(b.x))
 
+Base.isless(a::B, b::B) where B<:Blade = scalar(a) < scalar(b)
+
 """
     conj(b)
 
@@ -864,7 +866,7 @@ end
     ⋆(k)
 
 Hodge star operator mapping k to it's Hodge dual.
-Defined by k∧⋆(k) == 𝐼 where k is generated from orthonormal 1-vectors and 
+Defined by k∧⋆(k) == (k⋅k)*𝐼 where k is generated from orthonormal 1-vectors and 
 𝐼 is the psuedoscalar for the generating vector space.
 """
 ⋆(b::B) where {T,B<:Blade{T}} = ⋆(b, pseudoscalar(b))
