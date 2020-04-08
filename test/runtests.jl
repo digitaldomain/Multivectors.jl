@@ -222,6 +222,7 @@ using .G4
 @testset "contraction" begin
 
   e₁, e₂, e₃, e₄  = alle( G4, 4)[1:4]
+  e₁₃ = G4.e₁₃
 
   rand1() = rand(1)[1]
   a = rand1()∧e₁ + rand()∧e₃
@@ -230,11 +231,33 @@ using .G4
   @test a⋅(a⋅B) == 0.0
   B = B + rand()*(e₃∧e₄)
   @test a⋅(a⋅B) == 0.0
-  
+ 
+  α = Multivector(3.0)
+  β = 3.0
 
   A = 1.0 + 3.0G4.e₁₃
-  @test lcontraction(a,A) == a⋅A
-  @test rcontraction(A,a) == (A*a)[grade(A)-grade(a)]
+  @test lcontraction(α, β) == lcontraction(β, α) == lcontraction(α, α) == 9.0
+  @test rcontraction(α, β) == rcontraction(β, α) == rcontraction(α, α) == 9.0
+  @test lcontraction(α, A) == α*A
+  @test lcontraction(A, α) == α*A[0]
+  @test rcontraction(α, A) == α*A[0]
+  @test rcontraction(A, α) == A*α
+  @test ∙(α, A) == ∙(A, α) == 0.0
+  @test ∙(a, a) == grade(a*a, 0) 
+  @test A*a == A[0]*a + A[2]*a
+  @test lcontraction(a,A) == a⋅A == grade(a, 1)*A[2]
+  @test rcontraction(A,a) == A[2]*a
+  C = A + a
+  D = a + 2.0*pseudoscalar(e₁)
+  @test scalarprod(A∧C, D) == scalarprod(A, lcontraction(C,D))
+  @test scalarprod(D, C∧A) == scalarprod(rcontraction(D,C), A)
+  @test rcontraction(C,D) == C[1]*D[1] + C[2]*D[1]
+  @test rcontraction(D,C) == D*C[0] + D[1]*C[1] + D[4]*C[1] + D[4]*C[2]
+  @test lcontraction(C,D) == C[0]*D + C[1]*D[1] + C[1]*D[4] + C[2]*D[4]
+  @test reverse(lcontraction(A,C)) == rcontraction(reverse(C), reverse(A))
+  @test reverse(lcontraction(C,D)) == rcontraction(reverse(D), reverse(C))
+  @test reverse(lcontraction(A,D)) == rcontraction(reverse(D), reverse(A))
+  @test reverse(lcontraction(D,A)) == rcontraction(reverse(A), reverse(D))
   @test grades(A) == [0,2]
   show(A)
   @test first(A) == 1.0
@@ -259,9 +282,29 @@ using .G4
   end
 
   a = 1.0 + 1.5(e₁) + 2.0(e₁∧e₂) 
-  b = 1.0 + 2.5(e₁∧e₂∧e₄) + 3.0(e₁∧e₂∧e₃∧e₄)
-  @test a⋅b == grade(a*b, grade(b)-grade(a))
-  @test a∧b == grade(a*b, grade(b)+grade(a))
+  b = 1.0 - 10.0e₁ - 10.0e₄ + 2.5(e₁∧e₂∧e₄) + 3.0(e₁∧e₂∧e₃∧e₄)
+  @test a⋅b != grade(a*b, grade(b)-grade(a)) # only works for homogeneous k-vectors
+  @test a∧b != grade(a*b, grade(b)+grade(a)) # only works for homogeneous k-vectors    
+
+  a = 1.0e₁+2.0e₂+3.0e₃
+  B = b
+  C = 1.0e₁ + 2.0G4.e₁₂ + 3.0G4.e₁₂₃ + 1.1e₂ + 2.2G4.e₂₄
+  @test a⋅(B∧C) == (a⋅B)∧C + involute(B)∧(a⋅C)
+  @test rcontraction(B, a) == -a⋅involute(B)
+  @test lcontraction(a, B) == 0.5*(a*B - involute(B)*a)
+  @test rcontraction(B, a) == 0.5*(B*a - a*involute(B))
+
+  # less common multivector products
+  A,B = Multivector(2.0e₁+1.0e₁₃), Multivector(2.0e₁+3.0e₂)
+  @test length(A×B) > 0
+  @test length(B⋅A) == 2
+  @test length(A⋅B) == 1
+  @test length(B∧A) == 2
+  @test length(A∧B) == 2
+  @test 2.0⋅A == 2.0*A
+  @test 2.0∧A == 2.0*A
+  @test A⋅2.0 == 0.0
+
 end
 
 module G3
