@@ -174,7 +174,8 @@ sort blades by bases indices in ascending order within the k-vector
 sortbasis(B::BT) where {BT<:KVector} = BT(sort(Vector(B.k); by=subspace∘typeof))
 sortbasis(B::BT) where {BT<:Blade} = B
 Base.:(==)(B::BT, B2::BT) where {BT<:KVector} = sortbasis(B).k == sortbasis(B2).k
-Base.:(==)(B::BT, B2::BT2) where {T,K,K2,BT<:KVector{T,K}, BT2<:KVector{T,K2}} = false
+Base.:(==)(B::BT, B2::BT2) where {BT<:KVector, BT2<:KVector} = false
+#Base.:(==)(B::BT, B2::BT2) where {T,K,K2,BT<:KVector{T,K}, BT2<:KVector{T,K2}} = false
 
 Base.promote_rule(::Type{B}, ::Type{K}) where {B<:KVector,K<:Blade} = KVector
 

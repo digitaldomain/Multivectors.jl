@@ -29,7 +29,11 @@ scalarprod,
 grades,
 ∨,
 lcontraction,
-rcontraction
+rcontraction,
+symmetricdot,
+∙,
+kvectors,
+involute
 
 using Base.Iterators
 using StaticArrays
@@ -44,30 +48,44 @@ const KVectorVector{T} = Vector{KVector{T}}
 
 struct Multivector{T,N} <: Number
   s::T
-  B::Vector{KVector{T}}
+  B::Vector{KVector{T}}  #!me change to StaticVector, should be able to optimize better
 end
+
+scalar(M::Multivector) = M.s
+kvectors(M::Multivector) = M.B
+kvectors(s::T) where T<:Real = [s]
+kvectors(k::K) where K<:Union{KVector,Blade} = [k]
 
 #TODO: go through and use this as base case, can delete a lot of redundant code then
 const CliffordNumber = Union{Blade, KVector, Multivector}
 const CliffordNumberR = Union{Blade, KVector, Multivector, Real}
 
+#==
 @generated function Multivector{T,N}() where {T,N}
   B = [KVector{T,i,0}() for i in 1:N]
   :(Multivector{$T,$N}(zero($T), $B))
 end
+==#
 
+
+@generated function Multivector{T,N}() where {T,N}
+  B = SVector{N,KVector{T,KVK,KVN} where KVK where KVN}([KVector{T,i,0}() for i in 1:N])
+  :(Multivector{$T,$N}(zero($T), $B))
+end
+
+#==
 function Multivector(k::KVector{T,K}) where {T,K} 
   B = KVector{T}[KVector{T,i,0}() for i in 1:K]
   B[K] = k 
   Multivector{T,K}(zero(T), B)
 end
-
-#==
-@generated function Multivector(k::KVector{T,K}) where {T,K} 
-  B = KVector{T}[KVector{T,i,0}() for i in 1:K]
-  :(begin $B[$K] = k; Multivector{$T,$K}(zero($T), $B); end)
-end
 ==#
+
+@generated function Multivector(k::KVector{T,K}) where {T,K} 
+  #B = @SVector [KVector{T,i,0}() for i in 1:K]
+  B = SVector{K,KVector{T,KVK,KVN} where KVK where KVN}([KVector{T,i,0}() for i in 1:K])
+  :( Multivector{$T,$K}(zero($T), setindex($B, k, $K)) )
+end
 
 function Multivector(s::T, a::AbstractVector{KVector{T}}) where {T<:Number}
   g = grade.(a)
@@ -81,6 +99,7 @@ Multivector(a::AbstractVector{KVector{T}}) where {T<:Number} = Multivector(zero(
 
 Multivector(a::Blade{T}) where T = Multivector(KVector{T}[KVector(a)])
 Multivector(s::T) where {T<:Real} = Multivector{T,0}(s, KVector{T}[])
+Multivector{T, K}(s::S) where {S<:Real, T<:Real, K} = Multivector{promote_type(T,S), K}() + s
 
 function Base.show(io::IO, M::Multivector{T,N}) where {T,N}
   tosub = Dict(0=>'₀',1=>'₁',2=>'₂',3=>'₃',4=>'₄',5=>'₅',6=>'₆',7=>'₇',8=>'₈', 9=>'₉')
@@ -106,6 +125,7 @@ Base.IndexStyle(::Type{<:Multivector}) = Base.IndexLinear()
 Base.size(M::Multivector{T,N}) where {T,N} = N+1
 Base.getindex(M::Multivector{T,N},i::Integer) where {T,N} = iszero(i) ? M.s : M.B[i]
 Base.getindex(M::Multivector{T,N}, r::UnitRange{TI}) where {T,N,TI} = [M[i] for i in r]
+Base.getindex(M::Multivector{T,N}, r::Union{Tuple, AbstractVector}) where {T,N} = [M[i] for i in r]
 Base.firstindex(M::Multivector{T,N}) where {T,N} = 0
 Base.lastindex(M::Multivector{T,N}) where {T,N} = N
 StaticArrays.setindex(M::MV, v, i) where {MV<:Multivector} = 
@@ -155,10 +175,13 @@ function Base.:+(b::KVector{T,K}, c::KVector{T,L}) where {T,K,L}
   Multivector{T,max(K,L)}(zero(T), B)
 end
 ==#
+
 @generated function Base.:+(b::KVector{T,K}, c::KVector{T,L}) where {T,K,L} 
-  B = KVector{T}[KVector{T,i,0}() for i in 1:max(K,L)]
+  #B = @SVector [KVector{T,i,0}() for i in 1:max(K,L)]
+  B = SVector{max(K,L),KVector{T,KVK,KVN} where KVK where KVN}([KVector{T,i,0}() for i in 1:max(K,L)])
   KL = max(K,L)
-  :(begin $B[$K] = b; $B[$L] = c; Multivector{$T,$KL}(zero($T), $B); end)
+  #:(begin $B[$K] = b; $B[$L] = c; Multivector{$T,$KL}(zero($T), $B); end)
+  :( Multivector{$T,$KL}(zero($T), setindex(setindex($B, b, $K), c, $L)) )
 end
 
 Base.:+(c::KVector{T,L}, s::R) where {T,R<:Real,K,L} = s + c
@@ -273,26 +296,77 @@ Base.:*(s::T, M::MT) where {T<:Real, MT<:Multivector} = M*s
 Base.:/(M::MT, s::T) where {T<:Real, MT<:Multivector} = M*(one(T)/s)
 Base.:/(A::M,B::N) where {M<:CliffordNumber,N<:CliffordNumber} = A*inv(B) 
 
-Base.:(==)(a::M,b::M) where {M<:Multivector} = (a.s==b.s) && a.B==b.B
-Base.:(==)(a::M,b::K) where {M<:Multivector,K<:KVector} = grade(a,grade(b))==b
-Base.:(==)(a::K,b::M) where {M<:Multivector,K<:KVector} = b==a 
+sortbasis(s::T) where T<:Real = s
 
-Base.reverse(a::M) where M<:Multivector = a.s+mapreduce(reverse, +, a.B)
+Base.:(==)(a::M,b::M) where {M<:Multivector} = (a.s==b.s) && sortbasis.(kvectors(prune(a)))==sortbasis.(kvectors(prune(b)))
+Base.:(==)(a::M,b::N) where {M<:Multivector, N<:Multivector} = (a.s==b.s) && 
+  sortbasis.(kvectors(prune(a)))==sortbasis.(kvectors(prune(b)))
+
+for M in [Real, Multivector, Blade, KVector]
+  for N in [Real, Multivector, Blade, KVector]
+    if((M==Multivector && N!=Multivector) || (M!=Multivector && N==Multivector))
+      Base.:(==)(a::M,b::N) = Multivector(a) == Multivector(b)
+    end
+  end
+end
+
+
+Base.reverse(a::M) where M<:Multivector = a.s+mapreduce(reverse, +, a.B; init=M())
+Base.reverse(s::T) where T<:Real = s
+
+involute(A::M) where {T, M<:Multivector{T}} = M(A.s, map(((k,b),)->(-one(T))^k*b, enumerate(kvectors(A))))
 
 scalarprod(A::M,B::N) where {M<:Multivector,N<:Multivector} = grade(A*B,0)
 scalarprod(A::M,B::N) where {M<:Multivector,N<:KVector}       = grade(A*Multivector(B),0)
 scalarprod(A::M,B::N) where {M<:KVector,N<:Multivector}       = grade(Multivector(A)*B,0)
 scalarprod(A::M,B::N) where {M<:KVector,N<:KVector}             = grade(Multivector(A)*Multivector(B),0)
 
-# this works right?  only way to get a grade(A) + grade(B) basis is through ∧ any other grade will be <
-# what about reciprocal basis?
-∧(A::M,B::N) where {M<:CliffordNumber,N<:CliffordNumber} = grade(A,grade(A))∧grade(B,grade(B))
-#∧(A::M,B::N) where {M<:CliffordNumber,N<:CliffordNumber}       = grade(A*B, grade(A)+grade(B))
+∧(A::M, B::N) where {M<:CliffordNumber, N<:CliffordNumber} = Multivector(A)∧Multivector(B) 
+∧(A::M, B::N) where {M<:Multivector, N<:Multivector} = 
+  mapreduce(((b1,b2),)->A[b1]∧B[b2], +, Iterators.product(0:grade(A), 0:grade(B)))
+∧(A::M, B::N) where {M<:Union{KVector, Blade}, N<:Union{KVector, Blade}} = 
+  grade(A*B,grade(A)+grade(B))
+∧(s::T, B::N) where {T<:Real, N<:CliffordNumber} = s*B
+∧(A::M, s::T) where {M<:CliffordNumber, T<:Real} = s*B
 
-LinearAlgebra.:(⋅)(A::M,B::N) where {M<:CliffordNumber,N<:CliffordNumber} = grade(A*B,grade(B)-grade(A))
+#===
+Scalars and inner product always a bit special
+1. Scalars: 
+For a O-blade a, we get lcontraction(a, B) = aB; 
+if B has no scalar part, then rcontraction(B,a) = O. 
+By contrast, the inner product (symmetricdot) is explicitly zero for any scalar argument.
+==#
+
+LinearAlgebra.:(⋅)(A::M, B::N) where {M<:CliffordNumber, N<:CliffordNumber} = 
+  Multivector(A)⋅Multivector(B) 
+LinearAlgebra.:(⋅)(A::M,B::N) where {M<:Multivector, N<:Multivector} = 
+  mapreduce(((b1,b2),)->A[b1]⋅B[b2], +, Iterators.product(0:grade(A), 0:grade(B)))
+LinearAlgebra.:(⋅)(A::M,B::N) where {T, M<:Union{KVector{T}, Blade{T}}, N<:Union{KVector, Blade}} = 
+  (grade(B)>=grade(A)) ? grade(A*B,grade(B)-grade(A)) : zero(T)
+LinearAlgebra.:(⋅)(a::T, B::N) where {T<:Real, N<:CliffordNumber} = a*B
+LinearAlgebra.:(⋅)(A::N, b::T) where {T<:Real, N<:Multivector} = A⋅Multivector(b)
+LinearAlgebra.:(⋅)(A::N, b::T) where {T<:Real, S, N<:Union{KVector{S}, Blade{S}}} = zero(b)
+LinearAlgebra.:(⋅)(a::T1, b::T2) where {T1<:Real, T2<:Real} = a*b
+
+rcontraction(A,B) = reverse(reverse(B)⋅reverse(A))
+
+#==
+rcontraction(A::M,B::N) where {M<:CliffordNumber, N<:CliffordNumber} =
+  rcontraction(Multivector(A), Multivector(B))
+rcontraction(A::M,B::N) where {M<:Multivector,N<:Multivector} = 
+  mapreduce(((b1,b2),)->rcontraction(A[b1], B[b2]), +, Iterators.product(0:grade(A), 0:grade(B)))
+rcontraction(A::M,B::N) where {T, M<:Union{KVector{T}, Blade{T}}, N<:Union{KVector, Blade}} = 
+  (grade(A)>=grade(B)) ? grade(A*B,grade(A)-grade(B)) : zero(T)
+rcontraction(a::T, B::N) where {T<:Real, N<:CliffordNumber} = a*grade(B,0)
+rcontraction(B::N, α::T) where {N<:Multivector, T<:Real} = iszero(B.s) ? zero(α) : rcontraction(B, Multivector(α))
+rcontraction(B::N, α::T) where {N<:CliffordNumber, T<:Real} = rcontraction(Multivector(B), α)
+rcontraction(a::T1, b::T2) where {T1<:Real, T2<:Real} = a*b
+==#
+#==
 LinearAlgebra.:(⋅)(A::M,B::N) where {M<:KVector,N<:KVector} = grade(A*B,grade(B)-grade(A))
 LinearAlgebra.:(⋅)(A::M,B::N) where {M<:KVector,N<:Blade}   = grade(A*B,grade(B)-grade(A))
 LinearAlgebra.:(⋅)(A::M,B::N) where {M<:Blade,N<:KVector}   = grade(A*B,grade(B)-grade(A))
+==#
 
 """
   ∨(a,b)
@@ -318,7 +392,35 @@ The returned multivector, k-vector or blade will be the part of A contained in B
 When one considers a scalar to be orthogonal to a 1-vector.  The standard dot product ⋅ defined on 1-vectors in fact does just this.  A scalar on a 1-vector is indeed orthogonal to any vectors projection on that vector. 
 """
 lcontraction(A::M,B::N) where {M<:CliffordNumberR, N<:CliffordNumberR} = A⋅B
-rcontraction(A::M,B::N) where {M<:CliffordNumberR, N<:CliffordNumberR} = grade(A*B,grade(A)-grade(B))
+
+"""
+    symmetricdot(A, B) 
+
+The symmetric inner product.  
+
+A∙B = ∑⟨⟨A⟩ᵢ⟨B⟩ⱼ⟩_|ⱼ₋ᵢ| for i,j ≠ 0, 
+α∙B = 0, A∙α = 0 when α is a scalar
+"""
+function symmetricdot(A::M, B::N) where {M<:CliffordNumber, N<:CliffordNumber}
+  if grade(A) > 0 && grade(B) > 0 
+    mapreduce(((b1,b2),)->grade(grade(A, b1)*grade(B, b2), abs(b2-b1)), +, Iterators.product(1:grade(A), 1:grade(B)))
+  else
+    zero(grade(A,0))
+  end
+end
+
+symmetricdot(α::T, B::N) where {T<:Real, N<:CliffordNumber} = zero(α)
+symmetricdot(A::M, α::T) where {T<:Real, M<:CliffordNumber} = zero(α)
+
+"""
+    ∙(A, B) 
+
+The symmetric inner product.  
+
+A∙B = ∑⟨⟨A⟩ᵢ⟨B⟩ⱼ⟩_|ⱼ₋ᵢ| for i,j ≠ 0, 
+α∙B = 0, A∙α = 0 when α is a scalar
+"""
+∙(A,B) = symmetricdot(A,B)
 
 import LinearAlgebra: norm, normalize, norm_sqr
 norm_sqr(A::M) where {M<:Multivector} = grade(A*reverse(A), 0)
