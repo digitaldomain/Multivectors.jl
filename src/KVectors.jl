@@ -180,6 +180,7 @@ Base.:(==)(B::BT, B2::BT2) where {BT<:KVector, BT2<:KVector} = false
 Base.promote_rule(::Type{B}, ::Type{K}) where {B<:KVector,K<:Blade} = KVector
 
 prune(k::KVector, epsi = eps()) = sum(Iterators.filter(x->abs(scalar(x)) > epsi, k))
+prune(b::Blade, epsi = eps()) = abs(scalar(b)) > epsi ? b : scalar(b)
 
 """
     ∧(a,b)

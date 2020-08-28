@@ -33,7 +33,10 @@ rcontraction,
 symmetricdot,
 ∙,
 kvectors,
-involute
+involute,
+cayley_table,
+cayley_matrix_description
+
 
 using Base.Iterators
 using StaticArrays
@@ -439,5 +442,107 @@ scalarscalar(s::R) where R<:Real = s*s
 prune(s::Real, epsi = eps()) = abs(s) < epsi ? zero(s) : s
 prune(A::M, epsi = eps()) where {T, M<:Multivector{T}} = 
   reduce(+, Iterators.filter(k->scalarscalar(k) > epsi*epsi, map(prune, A)); init=zero(T))
+
+# WIP pass in some matrix basis representations and string names
+#==
+function cayley_table(b, s)
+  d = length(b)
+  ct = DataFrame()
+  ss = vcat( vcat(s, [s[i]*s[j] for i in 1:d for j in i:d]),
+            s[1]*s[2]*s[3])
+  ct[:, :X] = ss
+  bb = vcat(vcat(b, [b[i]*b[j] for i in 1:d for j in i:d]),
+            [b[1]*b[2]*b[3]])
+
+  ssf = vcat(["1", "-1"], ss)
+  bbf = vcat([one(b[1]), -one(b[1])], bb)
+  for i in 1:length(bb)
+    bᵢb = bb .* [bb[i]]
+    c = map(bᵢb) do bᵢbⱼ
+      br = findfirst(isequal(bᵢbⱼ), bbf)
+      if isnothing(br)
+        "-"*ssf[findfirst(isequal(-bᵢbⱼ), bbf)]
+      else
+        ssf[br]
+      end
+    end
+    ct[:, ss[i]] = c
+  end
+
+  ct
+end
+==#
+
+function cayley_table(b, s; id = one(b[1]))
+  d = length(b)
+  ct = DataFrame()
+
+  ss = mapreduce(c->reduce(*,c), vcat,  combinations(s))
+  ct[:, :X] = ss
+
+  bb = mapreduce(c->reduce(*,c), (a,c)->vcat(a, [c]),  combinations(b); init=[])
+
+  ssf = vcat(["1", "-1", "Ø"], ss)
+  bbf = vcat([id, -id, zero(b[1])], bb)
+  for i in 1:length(bb)
+    bᵢb = bb .* [bb[i]]
+    c = map(bᵢb) do bᵢbⱼ
+      br = findfirst(isapprox(bᵢbⱼ), bbf)
+      if isnothing(br)
+        br = findfirst(isapprox(-bᵢbⱼ), bbf)
+        if isnothing(br)
+          tr(bᵢbⱼ)
+        else
+          "-"*ssf[br]
+        end
+      else
+        ssf[br]
+      end
+    end
+    ct[:, ss[i]] = c
+  end
+
+  ct
+end
+
+cayley_tuples(b) = [(r, c, b[r]*b[c]) for r in 1:length(b) for c in 1:length(b)]
+cayley_tuples(b::Vector{T}) where T<:Type = cayley_tuples(one.(b))
+
+function cayley_table(e=dual(1))
+  b = vcat(1, mapreduce( i->one.(basis_kblades(e,i)), vcat, 1:grade(pseudoscalar(e)))) 
+  b*b'
+end
+
+function cayley_matrix_description(b::Vector)
+  vcr = map(((r,c,v),)->(v,c,r), cayley_tuples(b))
+  v2r = Dict()
+  for (i,bᵢ) in enumerate(b)
+    v2r[one(bᵢ)] = i
+  end
+
+  A = Array{Number, 2}(undef, length(b), length(b))
+  A[:,:] = zeros(length(b), length(b))
+  for (v,c,r) in vcr
+    vo = sign(v)
+    if v != 0
+      A[v2r[abs(v)], c] = vo*b[r]
+    end
+  end
+  
+  A
+end
+
+cayley_matrix_description(e=dual(1)) = cayley_matrix_description(vcat(1, mapreduce( i->one.(basis_kblades(e,i)), vcat, 1:grade(dual(1))))) 
+
+#== pixar dynamic deformables: the search for a GA basis
+==#
+
+# try to find a basis using pauli matrices with only real entries ( there are two ) that we can 
+# use to build the Q eigenmatrices
+# http://graphics.pixar.com/library/AnalyticEigensystems/paper.pdf
+# for example:  qbase(false, 1) * qbase(true, 1) = is the x-axis twist matrix T
+# whih is a flip matrix * a pinch matrix
+qbase(pauli_isdiag, zerorc) = begin pauli = pauli_isdiag ? [1.0 0; 0 -1] : [0.0 1; 1 0];  Qb = zeros(3,3); Qb[setdiff([1,2,3],[zerorc]), setdiff([1,2,3],[zerorc])] = pauli; Qb; end
+
 
 end # module
