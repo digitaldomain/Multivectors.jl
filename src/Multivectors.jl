@@ -521,15 +521,26 @@ function cayley_matrix_description(b::Vector)
   end
 
   A = Array{Number, 2}(undef, length(b), length(b))
-  A[:,:] = zeros(length(b), length(b))
+  A[:,:] = fill(zero(scalar(first(b))), length(b), length(b))
   for (v,c,r) in vcr
     vo = sign(v)
-    if v != 0
+    if !iszero(v)
       A[v2r[abs(v)], c] = vo*b[r]
     end
   end
   
   A
+end
+
+"""
+    matrix_representation(eᵢ)
+
+build a matrix representation of the blade eᵢ using the Cayley table.
+this is a larger matrix than you would get compared to a Dirac Matrix style of generation.
+"""
+function matrix_representation(b::Type{B}) where B<:Blade
+  C = cayley_matrix_description(b)
+  map(cᵢ->typeof(cᵢ) <: b ? sign(cᵢ) : zero(scalar(cᵢ)), C)
 end
 
 cayley_matrix_description(e=dual(1)) = cayley_matrix_description(vcat(1, mapreduce( i->one.(basis_kblades(e,i)), vcat, 1:grade(dual(1))))) 
