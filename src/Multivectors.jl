@@ -35,7 +35,8 @@ symmetricdot,
 kvectors,
 involute,
 cayley_table,
-cayley_matrix_description
+cayley_matrix_description,
+matrix_representation
 
 
 using Base.Iterators
@@ -512,6 +513,8 @@ function cayley_table(e=dual(1))
   b = vcat(1, mapreduce( i->one.(basis_kblades(e,i)), vcat, 1:grade(pseudoscalar(e)))) 
   b*b'
 end
+
+cayley_table(E::Vector) = b*b'
 
 function cayley_matrix_description(b::Vector)
   vcr = map(((r,c,v),)->(v,c,r), cayley_tuples(b))

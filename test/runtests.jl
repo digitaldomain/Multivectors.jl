@@ -389,3 +389,16 @@ end
   @test barycoords4(0.25e₁+0.25e₂+0.25e₃) == (0.25, 0.25, 0.25, 0.25)
 end
 
+@testset "Cayley" begin
+  e₁, e₂, e₃  = alle( G3, 3)[1:3]
+
+
+  γ₁ = matrix_representation(e₁)
+  γ₂ = matrix_representation(e₂)
+  γ₁₂ = matrix_representation(G3.e₁₂)
+
+  @test γ₂ ≈ -γ₁₂*γ₁
+
+  @test cayley_table(e₁)[2,4] == 1G3.e₁₃
+end
+
