@@ -312,6 +312,17 @@ module G3
   @generate_basis("+++",false,true,true)
 end
 using .G3
+
+@testset "Outermorphism" begin
+  e₁, e₂, e₃, e₁₂, e₁₃, e₂₃, e₁₂₃ = alle( G3, 3)
+  b = 3.0e₁₃
+  k = 1.0e₁ + 2.0e₂
+  M = 42.0 + b + k
+  scale = [2.0 0 0; 0 0.75 0; 0 0 10.0]
+  @test outermorphism(scale, b) == 10.0*2.0*b 
+  @test prune(outermorphism(scale, M)[1]) == 2.0e₁ + 0.75*2.0e₂
+end
+
 @testset "Quaternion" begin
 
   e₁, e₂, e₃, e₁₂, e₁₃, e₂₃, e₁₂₃ = alle( G3, 3)

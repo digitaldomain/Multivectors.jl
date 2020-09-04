@@ -559,4 +559,8 @@ cayley_matrix_description(e=dual(1)) = cayley_matrix_description(vcat(1, mapredu
 qbase(pauli_isdiag, zerorc) = begin pauli = pauli_isdiag ? [1.0 0; 0 -1] : [0.0 1; 1 0];  Qb = zeros(3,3); Qb[setdiff([1,2,3],[zerorc]), setdiff([1,2,3],[zerorc])] = pauli; Qb; end
 
 
+factor( M::MT ) where MT<:Multivector = factor.(kvectors(M))
+
+outermorphism(L, M::MT) where MT<:Multivector = scalar(M) + mapreduce(k->outermorphism(L, k), +, kvectors(M))
+
 end # module

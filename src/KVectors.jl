@@ -285,3 +285,8 @@ end
 
 coords( b::Blade ) = coords(KVector(b))
 
+factor( k::K ) where K<:KVector = factor.(k)
+
+outermorphism(L, k::K) where K<:KVector = mapreduce(b->outermorphism(L, b), +, k)
+
+

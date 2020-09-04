@@ -69,7 +69,8 @@ magnitude,
 scalar,
 ⋆,
 factor,
-untype
+untype,
+outermorphism
 
 using Combinatorics
 using Base.Iterators
@@ -931,3 +932,11 @@ end
   une = es[findfirst(eᵢ->eᵢ{T} == b, es)]
   :($une)
 end
+
+
+function outermorphism(L, b::B) where B<:Blade
+  sb = factor(b) # (scalar, followed by all 1-blades)
+  𝐼 = pseudoscalar(b)  # need this to construct KVector from coords
+  mapreduce(bᵢ->KVector(L*coords(one(bᵢ)), 𝐼), ∧, sb[2:end])*sb[1]
+end
+
