@@ -934,6 +934,14 @@ end
 end
 
 
+"""
+    outermorphism(L, b)
+
+apply the linear transform L to the geometric algebra object b as an outermorphism.
+
+the outermorphism property
+L(a∧b∧c) = L(a)∧L(b)∧L(c)
+"""
 function outermorphism(L, b::B) where B<:Blade
   sb = factor(b) # (scalar, followed by all 1-blades)
   𝐼 = pseudoscalar(b)  # need this to construct KVector from coords
