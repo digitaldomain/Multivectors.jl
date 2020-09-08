@@ -305,6 +305,9 @@ using .G4
   @test 2.0∧A == 2.0*A
   @test A⋅2.0 == 0.0
 
+  @test (1e₁ ∈ 1G4.e₁₂) == true
+  @test (1e₁ ∈ 1G4.e₂₃+1G4.e₁₂) == false
+  @test (1+1e₁ ∈ 1G4.e₂₃+1G4.e₁₂) == false
 end
 
 module G3

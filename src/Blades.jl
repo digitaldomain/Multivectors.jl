@@ -585,6 +585,7 @@ end
 
 subspace( b::K ) where {K<:Blade} = subspace(K)
 
+#!me why this way?  inconsitent to return array for grades > 1 and atom for grade 1
 @generated function subspace( b::K ) where {T,K<:Blade{T,1}}
   si = subspace(b)[1]
   :($si)
@@ -947,4 +948,6 @@ function outermorphism(L, b::B) where B<:Blade
   𝐼 = pseudoscalar(b)  # need this to construct KVector from coords
   mapreduce(bᵢ->KVector(L*coords(one(bᵢ)), 𝐼), ∧, sb[2:end])*sb[1]
 end
+
+Base.in(be::B, bs::B2) where {B<:Blade, B2<:Blade} = (subspace(B) ∩ subspace(B2)) == subspace(B)
 

@@ -563,4 +563,6 @@ factor( M::MT ) where MT<:Multivector = factor.(kvectors(M))
 
 outermorphism(L, M::MT) where MT<:Multivector = scalar(M) + mapreduce(k->outermorphism(L, k), +, kvectors(M))
 
+Base.in(be::BK, bs::BK2) where {BK<:CliffordNumber, BK2<:CliffordNumber} = iszero(be∧bs)
+
 end # module

@@ -289,4 +289,5 @@ factor( k::K ) where K<:KVector = factor.(k)
 
 outermorphism(L, k::K) where K<:KVector = mapreduce(b->outermorphism(L, b), +, k)
 
+Base.in(be::BK, bs::BK2) where {BK<:Union{Blade,KVector}, BK2<:Union{Blade,KVector}} = iszero(be∧bs)
 
