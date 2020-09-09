@@ -291,3 +291,9 @@ outermorphism(L, k::K) where K<:KVector = mapreduce(b->outermorphism(L, b), +, k
 
 Base.in(be::BK, bs::BK2) where {BK<:Union{Blade,KVector}, BK2<:Union{Blade,KVector}} = iszero(be∧bs)
 
+fieldtype(k::K) where {F<:Number, K<:KVector{F}} = F
+
+function Base.isapprox(k::K, l::K2; kwargs...) where {K<:KVector, K2<:KVector} 
+  mapreduce( (b,c)->isapprox(b,c; kwargs...), (acc,e)->acc && e, (sortbasis∘prune)(k), (sortbasis∘prune)(l))
+end
+

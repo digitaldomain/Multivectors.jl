@@ -366,6 +366,9 @@ k	j	−i	−1
 
   @test cos(π/8) - sin(π/8)*1.0e₁₂ == q
 
+  @test isapprox(grade(log(exp((π/10)*𝑖)), 2), π/10*𝑖; atol = 0.0001)
+  @test isapprox(grade(log(exp((π/10)*𝑖)), 0), 0.0; atol = 0.0001)
+
 end
 
 @testset "Barycentric" begin

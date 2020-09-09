@@ -70,7 +70,8 @@ scalar,
 ⋆,
 factor,
 untype,
-outermorphism
+outermorphism,
+fieldtype
 
 using Combinatorics
 using Base.Iterators
@@ -950,4 +951,10 @@ function outermorphism(L, b::B) where B<:Blade
 end
 
 Base.in(be::B, bs::B2) where {B<:Blade, B2<:Blade} = (subspace(B) ∩ subspace(B2)) == subspace(B)
+
+function Base.isapprox(b::B, c::B2; kwargs...) where {B<:Blade, B2<:Blade} 
+  untype(b) == untype(c) && isapprox(scalar(b), scalar(c); kwargs...)
+end
+
+fieldtype(b::B) where {F<:Number, B<:Blade{F}} = F
 

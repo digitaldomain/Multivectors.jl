@@ -565,4 +565,66 @@ outermorphism(L, M::MT) where MT<:Multivector = scalar(M) + mapreduce(k->outermo
 
 Base.in(be::BK, bs::BK2) where {BK<:CliffordNumber, BK2<:CliffordNumber} = iszero(be∧bs)
 
+"""
+    exp(M)
+
+Taylor series approx exponential of a CliffordNumber around 0
+"""
+function Base.exp(M::T; tol = eps(fieldtype(M))) where T<:CliffordNumber
+  FT = fieldtype(M)
+  d = 1.0
+  eᴹ = one(FT)
+  emf = one(FT)
+  f = one(FT)
+  guard = 15
+
+  while guard > 0
+    emf *= M/f
+    f += one(FT)
+    eᴹ′ = eᴹ + emf
+    d = LinearAlgebra.norm_sqr(eᴹ′-eᴹ)
+    eᴹ = eᴹ′
+    guard -= 1
+    d > tol || break
+  end
+
+  eᴹ
+end
+
+"""
+    log(M)
+
+Taylor series approx natural logarithm of a CliffordNumber around 1.  
+1 is choosen as expansion point for symmetry with exp at 0.
+e⁰ == 1, log(e⁰) == log(1) == 0 
+"""
+function Base.log(M::T; tol = eps(fieldtype(M))) where T<:CliffordNumber
+  FT = fieldtype(M)
+  d = 1.0
+  logM = zero(FT)
+  logMf = -one(FT)
+  f = one(FT)
+  guard = 15
+  M_1 = M - one(FT)
+
+  while guard > 0
+    logMf *= -M_1
+    logM′ = logM + logMf/f
+    f += one(FT)
+    d = LinearAlgebra.norm_sqr(logM′-logM)
+    logM = logM′
+    guard -= 1
+    d > tol || break
+  end
+
+  logM
+end
+
+fieldtype(M::MT) where {F<:Number, MT<:Multivector{F}} = F
+
+
+function Base.isapprox(M::MT, N::MT2; kwargs...) where {MT<:CliffordNumber, MT2<:CliffordNumber} 
+  mapreduce((b,c)->isapprox(b,c; kwargs...), (acc,e)->acc && e, Multivector(M), Multivector(N))
+end
+
 end # module
