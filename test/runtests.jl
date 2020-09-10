@@ -308,6 +308,8 @@ using .G4
   @test (1e₁ ∈ 1G4.e₁₂) == true
   @test (1e₁ ∈ 1G4.e₂₃+1G4.e₁₂) == false
   @test (1+1e₁ ∈ 1G4.e₂₃+1G4.e₁₂) == false
+
+  @test isapprox(newton_inv(10.0+2.0G4.e₂₄+3.0G4.e₂₃+0.1e₂)*(10.0+2.0G4.e₂₄+3.0G4.e₂₃+0.1e₂), Multivector(1.0); atol = 0.001)
 end
 
 module G3

@@ -36,7 +36,8 @@ kvectors,
 involute,
 cayley_table,
 cayley_matrix_description,
-matrix_representation
+matrix_representation,
+newton_inv
 
 
 using Base.Iterators
@@ -622,6 +623,30 @@ end
 
 fieldtype(M::MT) where {F<:Number, MT<:Multivector{F}} = F
 
+Base.:~(M::CliffordNumber) = reverse(M)
+
+"""
+    newton_inv(m)
+
+find reciprocal of a CliffordNumber using Newton-Rhaphson
+"""
+function newton_inv(m, 
+                    x₀=(~m)/grade(m*(~m), 0),
+                    errtol²=0.0001, 
+                    maxiter=15)
+  n = 0.75/(norm(m))
+  m *= n
+  xᵢ = x₀
+
+  while maxiter > 0
+    xᵢ′ = 2.0*xᵢ-xᵢ*m*xᵢ
+    r = LinearAlgebra.norm_sqr(xᵢ′ - xᵢ)
+    xᵢ = xᵢ′
+    errtol² >= r && break
+    maxiter -= 1
+  end
+  xᵢ*n
+end
 
 function Base.isapprox(M::MT, N::MT2; kwargs...) where {MT<:CliffordNumber, MT2<:CliffordNumber} 
   mapreduce((b,c)->isapprox(b,c; kwargs...), (acc,e)->acc && e, Multivector(M), Multivector(N))
