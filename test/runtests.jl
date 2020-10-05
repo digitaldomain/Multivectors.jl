@@ -156,9 +156,21 @@ module PG3
   @generate_basis("+++0")
 end
 using .PG3
+
 @testset "PGA3D" begin
   e₁, e₂, e₃, e₄ = alle( PG3, 4)[1:4]
   e₁₂ = PG3.e₁₂; e₃₄ = PG3.e₃₄; e₁₂₃₄ = PG3.e₁₂₃₄;
+  e₁₂₃ = PG3.e₁₂₃; e₂₃₄ = PG3.e₂₃₄; e₁₃₄ = PG3.e₁₃₄; e₁₂₄ = PG3.e₁₂₄
+
+  point(x,y,z) = -Float64(x)*e₂₃₄ + Float64(y)*e₁₃₄ - Float64(z)*e₁₂₄ + 1.0*e₁₂₃
+  dir(x,y,z) = -Float64(x)*e₂₃₄ + Float64(y)*e₁₃₄ - Float64(z)*e₁₂₄
+  # dual quaternion for translation
+  translator(x,y,z) = -0.5*dir(x,y,z)*1.0e₁₂₃+1.0
+
+  dqx = translator(1,0,0)
+  @test dqx*point(1,0,10)*reverse(dqx) == point(2,0,10)
+  @test (dqx*dqx)*point(1,0,10)*reverse(dqx*dqx) == point(3,0,10)
+
   a = e₁(1.0); b = e₂(2.0); c = e₃(3.0); d = e₄(4.0)
   @test typeof(a+b*c) == typeof(Multivector{Float64,2}())
   B1 = KVector(a)
@@ -219,6 +231,13 @@ module G4
   @generate_basis("++++")
 end
 using .G4
+
+@testset "conversion" begin
+  e₁, e₂, e₃, e₄  = alle( G4, 4)[1:4]
+  @test  1.0e₁ + 2e₁ == 1e₁ + 2.0e₁ == 1.0e₁ + 2.0e₁
+  @test  1.0e₁ + 2e₂ == 1e₁ + 2.0e₂ == 1.0e₁ + 2.0e₂
+end
+
 @testset "contraction" begin
 
   e₁, e₂, e₃, e₄  = alle( G4, 4)[1:4]
