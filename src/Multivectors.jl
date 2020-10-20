@@ -181,7 +181,7 @@ function Base.:+(b::KVector{T,K}, c::KVector{T,L}) where {T,K,L}
 end
 ==#
 
-@generated function Base.:+(b::KVector{T,K}, c::KVector{T,L}) where {T,K,L} 
+@generated function Base.:+(b::KVector{T,K}, c::KVector{T,L}) where {T,K,L}
   #B = @SVector [KVector{T,i,0}() for i in 1:max(K,L)]
   B = SVector{max(K,L),KVector{T,KVK,KVN} where KVK where KVN}([KVector{T,i,0}() for i in 1:max(K,L)])
   KL = max(K,L)
@@ -289,7 +289,7 @@ Base.:*(B::BT, B2::BT2) where {T,K,K2,N,N2,BT<:KVector{T,K,0},BT2<:KVector{T,K2,
 Base.:*(a::BT, b::BT2) where {T,K,K2,BT<:KVector{T,K,0},BT2<:KVector{T,K2,0}} = Multivector{T,0}()
 Base.:*(B::BT, B2::BT2) where {T,K,K2,N,N2,BT<:KVector{T,K,N},BT2<:KVector{T,K2,N2}} = mapreduce(((k1,k2),)->B[k1]*B2[k2], +, Iterators.product(1:N, 1:N2))
 
-Base.:*(M::MT, M2::MT2) where {T,N,N2,MT<:Multivector{T,N},MT2<:Multivector{T,N2}} = mapreduce(((b1,b2),)->M[b1]*M2[b2], +, Iterators.product(0:N, 0:N2))
+Base.:*(M::MT, M2::MT2) where {T,S,N,N2,MT<:Multivector{S,N},MT2<:Multivector{T,N2}} = mapreduce(((b1,b2),)->M[b1]*M2[b2], +, Iterators.product(0:N, 0:N2))
 
 Base.:*(A::K, b::B) where {K<:KVector,B<:Blade} = A*KVector(b)
 Base.:*(b::B, A::K ) where {B<:Blade,K<:KVector} = KVector(b)*A
@@ -546,6 +546,8 @@ function matrix_representation(b::Type{B}) where B<:Blade
   C = cayley_matrix_description(b)
   map(cᵢ->typeof(cᵢ) <: b ? sign(cᵢ) : zero(scalar(cᵢ)), C)
 end
+
+Base.Array(M::Multivector{T}) where T = mapreduce(b->b.x*(matrix_representation∘untype)(b), +, mapreduce(k->[b for b in k], vcat, [ k for k in M]))
 
 cayley_matrix_description(e=dual(1)) = cayley_matrix_description(vcat(1, mapreduce( i->one.(basis_kblades(e,i)), vcat, 1:grade(dual(1))))) 
 

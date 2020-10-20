@@ -161,15 +161,54 @@ using .PG3
   e₁, e₂, e₃, e₄ = alle( PG3, 4)[1:4]
   e₁₂ = PG3.e₁₂; e₃₄ = PG3.e₃₄; e₁₂₃₄ = PG3.e₁₂₃₄;
   e₁₂₃ = PG3.e₁₂₃; e₂₃₄ = PG3.e₂₃₄; e₁₃₄ = PG3.e₁₃₄; e₁₂₄ = PG3.e₁₂₄
+  𝐼 = e₁₂₃₄
+  @test KVector(dual(1𝐼)) == dual(KVector(1𝐼))
+  @test Multivector(KVector(dual(1𝐼))) == Multivector(dual(KVector(1𝐼))) == dual(Multivector(1𝐼))
 
-  point(x,y,z) = -Float64(x)*e₂₃₄ + Float64(y)*e₁₃₄ - Float64(z)*e₁₂₄ + 1.0*e₁₂₃
-  dir(x,y,z) = -Float64(x)*e₂₃₄ + Float64(y)*e₁₃₄ - Float64(z)*e₁₂₄
+  point(x, y, z) = -Float64(x)*e₂₃₄ + Float64(y)*e₁₃₄ - Float64(z)*e₁₂₄ + 1.0*e₁₂₃
+  dir(x, y, z) = -Float64(x)*e₂₃₄ + Float64(y)*e₁₃₄ - Float64(z)*e₁₂₄
+  line(p, q) = p∨q
+  Line{T} = Union{KVector{T, 2}, Blade{T, 2}}
+
   # dual quaternion for translation
+  # constructed as ratio between point (0,0,0) and (x,y,z)
   translator(x,y,z) = -0.5*dir(x,y,z)*1.0e₁₂₃+1.0
+  # rotation constructed with ratio between line a+b and line a.  so that (a+b)/a * a *~(a+b)/a = b
+  # a rotation from a to b. lines should intersect at origin or we'll get a translation 
+  rotator(a::Line, b::Line) = normalize(a+b)/a
 
-  dqx = translator(1,0,0)
-  @test dqx*point(1,0,10)*reverse(dqx) == point(2,0,10)
-  @test (dqx*dqx)*point(1,0,10)*reverse(dqx*dqx) == point(3,0,10)
+  q = rotator(line(point(0,0,0), point(1,0,0)), 
+              line(point(0,0,0), point(1/sqrt(2), 1/sqrt(2), 0)))
+
+  # rotate (1,0,0.1) by 45 degrees around z axis twice
+  rxz = normalize(q*q*point(1,0,0.1)*reverse(q)*reverse(q))
+  rxz_xyz = coords(dual(rxz)[1])
+  rxz_xyz = rxz_xyz .* (1.0/rxz_xyz[4])
+  @test isapprox(rxz_xyz[1], 0.0; atol = 1e-10) 
+  @test isapprox(rxz_xyz[2], 1.0; atol = 1e-10) 
+  @test isapprox(rxz_xyz[3], 0.1; atol = 1e-10) 
+
+  tx = translator(1,0,0)
+  @test tx*point(1,0,10)*reverse(tx) == point(2,0,10)
+  @test (tx*tx)*point(1,0,10)*reverse(tx*tx) == point(3,0,10)
+
+  # dual quaternion is composition of translator and rotator
+  x = point(1,0,0)
+  dq = tx*q  # rotate then translate
+  qd = q*tx  # translate then rotate
+  dqx = dq*x*reverse(dq)
+  # check x coord after transformation
+  @test (dqx∧1.0e₁)[4][1] |> scalar ≈ 1/sqrt(2) + 1.0
+  qdx = qd*x*reverse(qd)
+  @test (qdx∧1.0e₁)[4][1] |> scalar ≈ 2/sqrt(2)
+
+  # z coord should not have changed
+  qdxz = qd*point(1.0,0,0.1)*reverse(qd)
+  dqxz = dq*point(1.0,0,0.1)*reverse(dq)
+  @test (qdxz∧1.0e₃)[4][1] |> scalar ≈ 0.1
+  @test (dqxz∧1.0e₃)[4][1] |> scalar ≈ 0.1
+
+
 
   a = e₁(1.0); b = e₂(2.0); c = e₃(3.0); d = e₄(4.0)
   @test typeof(a+b*c) == typeof(Multivector{Float64,2}())

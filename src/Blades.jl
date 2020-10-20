@@ -114,6 +114,7 @@ quadmetric(::Type{E}) where {T, E<:e⁰{T}} = zero(T)
 tosub(i) = [ '₁','₂','₃','₄','₅','₆','₇','₈','₉' ][i]
 tosup(i) = [ '¹','²','³','⁴','⁵','⁶','⁷','⁸','⁹' ][i]
 
+Blade{T, N}(b::B) where {T,N,T2, B<:Blade{T2,N}} = T(b.x)*untype(b)
 
 export ZForm
 
@@ -957,4 +958,10 @@ function Base.isapprox(b::B, c::B2; kwargs...) where {B<:Blade, B2<:Blade}
 end
 
 fieldtype(b::B) where {F<:Number, B<:Blade{F}} = F
+
+function Base.promote(a::ET, b::ES) where {T<:Number, S<:Number, ET<:Blade{T}, ES<:Blade{S}}
+  ap,bp = promote(a.x, b.x)
+  (untype(a)(ap), untype(b)(bp))
+end
+
 
