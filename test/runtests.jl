@@ -263,6 +263,9 @@ using .PG3
   A = 2-A
   B = 2*B + 3(e₂∧e₃)
   @test 2A×B == (A*B-B*A)
+
+  v = 1.0+2.0e₁₂ + 1.1(e₁∧e₃)
+  @test isapprox(norm(v*inv(v)), 1.0; atol=1e-4)
 end
 
 module G4
