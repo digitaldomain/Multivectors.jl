@@ -34,7 +34,8 @@ isnull,
 coords,
 prune,
 normalize_safe,
-basis_1vector
+basis_1vector,
+reciprocal_frame
 
 include("Blades.jl")
 using StaticArrays
@@ -301,4 +302,22 @@ fieldtype(k::K) where {F<:Number, K<:KVector{F}} = F
 function Base.isapprox(k::K, l::K2; kwargs...) where {K<:KVector, K2<:KVector} 
   mapreduce( (b,c)->isapprox(b,c; kwargs...), (acc,e)->acc && e, (sortbasis∘prune)(k), (sortbasis∘prune)(l))
 end
+
+"""
+    reciprocal_frame(fᵢ)
+
+given a set of 1-blades and/or  1-vectors defining a frame of reference,
+
+return a set of reciprocal frame vectors where fᵢ⋅fʲ = δᵢʲ
+
+only valid for metric vectors
+"""
+function reciprocal_frame(fᵢ::Vector{K}) where {T,K<:Union{KVector{T}, Blade{T}}}
+  Fn⁻¹ = inv(reduce(∧, fᵢ))
+
+  map(1:length(fᵢ)) do i
+    ((-one(T))^(i-1)) * reduce(∧, vcat(fᵢ[1:i-1], fᵢ[i+1:end])) * Fn⁻¹    
+  end
+end
+
 

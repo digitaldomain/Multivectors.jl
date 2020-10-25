@@ -123,6 +123,21 @@ using .KG3
   @test det(1.0e₁+1.0e₂, 1.0e₁+1.0e₂) == 1.0
   @test det(1.0e₁+1.0e₂, 1.0e₁+1.0e₂+1.0e₃) == 0.0
   @test cos(KVector([1.0,0.0,0.0], 𝐼), KVector([1.0,1.0,0.0], 𝐼)) ≈ cos(π/4)
+
+  fᵢ = [rand()*e₁ + rand()*e₂ + rand()*e₃ for i in 1:3]
+  fⁱ = reciprocal_frame(fᵢ)
+  @test [a⋅b for a in fᵢ for b in fⁱ] |> sum ≈ 3.0
+
+  # this is a neat property of reciprocal frames fᵢfⁱ == n via geometric product,  an integer!
+  @test grade(mapreduce(*, +, fᵢ, fⁱ), 0) ≈ 3.0
+  @test norm(grade(mapreduce(*, +, fᵢ, fⁱ), 0)) ≈ 3.0
+  # not neccessarily parrallel 
+  @test !(norm.(map(∧, fᵢ, fⁱ)) |> sum ≈ 0.0)  
+  # only if source frame was orthogonal 
+  eᵢ = 1.0 .* basis_1blades(e₁)
+  eⁱ = reciprocal_frame(eᵢ)
+  @test norm.(map(∧,eᵢ, eⁱ)) |> sum ≈ 0.0
+  
 end
 
 @testset "Null KVectors" begin
