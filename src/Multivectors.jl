@@ -37,7 +37,8 @@ involute,
 cayley_table,
 cayley_matrix_description,
 matrix_representation,
-newton_inv
+newton_inv,
+shirokov_inv
 
 
 using Base.Iterators
@@ -158,6 +159,15 @@ import Base: map, mapreduce
 
 map(f, m::Multivector) = (f(k) for k in m)
 mapreduce(f, r, m::Multivector) = reduce(r, (f(k) for k in m))
+
+function pseudoscalar(U::M) where {T, M<:Multivector{T}} 
+  for i in 1:length(U.B) 
+    if length(U.B[i]) > 0
+      return pseudoscalar(first(U.B[i]))
+    end
+  end
+  pseudoscalar(one(T)*e₁)
+end
 
 Base.conj(m::Multivector) = mapreduce(conj, +, m)
 
@@ -301,11 +311,11 @@ Base.:*(s::T, M::MT) where {T<:Real, MT<:Multivector} = M*s
 Base.:/(M::MT, s::T) where {T<:Real, MT<:Multivector} = M*(one(T)/s)
 Base.:/(A::M,B::N) where {M<:CliffordNumber,N<:CliffordNumber} = A*inv(B) 
 
-sortbasis(s::T) where T<:Real = s
+sort_basis(s::T) where T<:Real = s
 
-Base.:(==)(a::M,b::M) where {M<:Multivector} = (a.s==b.s) && sortbasis.(kvectors(prune(a)))==sortbasis.(kvectors(prune(b)))
+Base.:(==)(a::M,b::M) where {M<:Multivector} = (a.s==b.s) && sort_basis.(kvectors(prune(a)))==sort_basis.(kvectors(prune(b)))
 Base.:(==)(a::M,b::N) where {M<:Multivector, N<:Multivector} = (a.s==b.s) && 
-  sortbasis.(kvectors(prune(a)))==sortbasis.(kvectors(prune(b)))
+  sort_basis.(kvectors(prune(a)))==sort_basis.(kvectors(prune(b)))
 
 for M in [Real, Multivector, Blade, KVector]
   for N in [Real, Multivector, Blade, KVector]
@@ -318,7 +328,9 @@ end
 
 Base.reverse(a::M) where M<:Multivector = a.s+mapreduce(reverse, +, a.B; init=M())
 Base.reverse(s::T) where T<:Real = s
+Base.:~(k::K) where {K<:CliffordNumber} = reverse(k)
 
+involute(v::CliffordNumber) = mapreduce(vᵢ->(-1)^grade(vᵢ)*vᵢ, +, v)
 involute(A::M) where {T, M<:Multivector{T}} = M(A.s, map(((k,b),)->(-one(T))^k*b, enumerate(kvectors(A))))
 
 scalarprod(A::M,B::N) where {M<:Multivector,N<:Multivector} = grade(A*B,0)
@@ -628,7 +640,6 @@ end
 
 fieldtype(M::MT) where {F<:Number, MT<:Multivector{F}} = F
 
-Base.:~(M::CliffordNumber) = reverse(M)
 
 """
     newton_inv(m)
@@ -651,6 +662,43 @@ function newton_inv(m,
     maxiter -= 1
   end
   xᵢ*n
+end
+
+
+"""
+conjugation from Shirokov inverse paper
+"""
+Δⱼ(v::CliffordNumber, j::Int) = mapreduce(vᵢ->vᵢ*(-1)^binomial(grade(vᵢ), 2^(j-1)), +, v)
+
+# helpers for skirokov_inv
+C(U::CliffordNumber, k, N) = grade(U, 0)*N/k
+
+"""
+  shirokov_inv(U)
+
+  algebraic inverse of multivector of arbitrary grade in a non-degenerate algebra
+
+  Ref: On determinant, other characteristic polynomial coefficients, and inverses in Clifford algebras of arbitrary dimension
+D. S. Shirokov
+
+"""
+function shirokov_inv(U::CliffordNumber)
+  n = grade(pseudoscalar(U))
+  N = 2^((n+1)/2)
+
+  Ukee = Multivector[U]
+  for k in 2:N
+    Uprev = last(Ukee)
+    Unext = U*(Uprev - C(Uprev, k-1, N))
+    push!(Ukee, Unext)
+  end
+
+  U_N_1 = Ukee[end-1]
+  AdjU = C(U_N_1, N-1, N) - U_N_1
+  DetU = -last(Ukee)
+
+  AdjU/DetU
+
 end
 
 function Base.isapprox(M::MT, N::MT2; kwargs...) where {MT<:CliffordNumber, MT2<:CliffordNumber} 

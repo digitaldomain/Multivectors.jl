@@ -149,6 +149,10 @@ using .CGA
   @test i+j == Multivector(i) + Multivector(j) == j+i == Multivector(i) + j == i + Multivector(j)
   @test i+j+k == i+(j+k) == (i+k)+j 
 
+  v = i+j+k+1.0
+  @test Multivectors.Δⱼ(v, 1) == involute(v)
+  @test Multivectors.Δⱼ(v, 2) == ~v
+  @test prune(shirokov_inv(i+j+k)*(i+j+k)) ≈ 1.0
 end
 
 module PG3
@@ -421,7 +425,7 @@ k	j	−i	−1
   # Transform a 1-vector with the sandwich product.
   v = reverse(q)*(1.0e₁+1.0e₂+1.0e₃)*q
 
-  v′ = grade(v, 1) |> prune∘sortbasis
+  v′ = grade(v, 1) |> prune∘sort_basis
   @test v′⋅1.0e₃ == 1.0
   @test v′⋅1.0e₁ ≈ sqrt(2.0)
 

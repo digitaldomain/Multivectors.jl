@@ -29,7 +29,7 @@ KVectors are containers for Blades of the same grade.  New Blade elements are ad
 export 
 KVector,
 NullKVector,
-sortbasis,
+sort_basis,
 isnull,
 coords,
 prune,
@@ -173,13 +173,13 @@ Hodge star operator mapping k to it's Hodge dual.
 ⋆(k::K) where {K<:KVector} = mapreduce(⋆,+,k)
 
 """
-    sortbasis(b)
+    sort_basis(b)
 
 sort blades by bases indices in ascending order within the k-vector
 """
-sortbasis(B::BT) where {BT<:KVector} = BT(sort(Vector(B.k); by=subspace∘typeof))
-sortbasis(B::BT) where {BT<:Blade} = B
-Base.:(==)(B::BT, B2::BT) where {BT<:KVector} = sortbasis(B).k == sortbasis(B2).k
+sort_basis(B::BT) where {BT<:KVector} = BT(sort(Vector(B.k); by=subspace∘typeof))
+sort_basis(B::BT) where {BT<:Blade} = B
+Base.:(==)(B::BT, B2::BT) where {BT<:KVector} = sort_basis(B).k == sort_basis(B2).k
 Base.:(==)(B::BT, B2::BT2) where {BT<:KVector, BT2<:KVector} = false
 #Base.:(==)(B::BT, B2::BT2) where {T,K,K2,BT<:KVector{T,K}, BT2<:KVector{T,K2}} = false
 
@@ -240,8 +240,8 @@ for length(a) = 2, gram( a, u ) = [ a₁⋅u₁ a₁⋅u₂ ;
                                     a₂⋅u₁ a₂⋅u₂ ]
 """
 function gram(a::K,u::L) where {K<:KVector, L<:KVector}
-  a = sortbasis(prune(a))
-  u = sortbasis(prune(u))
+  a = sort_basis(prune(a))
+  u = sort_basis(prune(u))
   n = length(a)
   if n != length(u)
     zero(eltype(eltype(a)))
@@ -300,7 +300,7 @@ Base.in(be::BK, bs::BK2) where {BK<:Union{Blade,KVector}, BK2<:Union{Blade,KVect
 fieldtype(k::K) where {F<:Number, K<:KVector{F}} = F
 
 function Base.isapprox(k::K, l::K2; kwargs...) where {K<:KVector, K2<:KVector} 
-  mapreduce( (b,c)->isapprox(b,c; kwargs...), (acc,e)->acc && e, (sortbasis∘prune)(k), (sortbasis∘prune)(l))
+  mapreduce( (b,c)->isapprox(b,c; kwargs...), (acc,e)->acc && e, (sort_basis∘prune)(k), (sort_basis∘prune)(l))
 end
 
 """
