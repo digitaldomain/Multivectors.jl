@@ -447,9 +447,7 @@ normalize(A::M) where {M<:Multivector} = A/norm(A)
 ishomogenous(v::M) where {M<:CliffordNumberR} = true 
 ishomogenous(v::M) where {M<:Multivector} = sum(!iszero(b) for b ∈ v) == 1
 
-# should we define and use norm instead of x*reverse(x)?
-Base.inv(b::B) where {B<:KVector} = reverse(b)/grade((b*reverse(b)), 0)
-Base.inv(v::M) where {M<:Multivector} = ishomogenous(v) ? reverse(v)/grade((v*reverse(v)), 0) : newton_inv(v)
+Base.inv(v::M) where {M<:CliffordNumber} = shirokov_inv(v)
 
 scalarscalar(m::M) where M<:Multivector = mapreduce(scalarscalar, +, m) 
 scalarscalar(k::K) where K<:KVector = mapreduce((x->x*x)∘scalar, +, k)
