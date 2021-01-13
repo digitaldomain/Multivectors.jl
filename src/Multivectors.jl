@@ -684,22 +684,20 @@ D. S. Shirokov
 """
 function shirokov_inv(U::CliffordNumber)
   n = grade(pseudoscalar(U))
-  N = 2^((n+1)/2)
+  N = 2^div(n+1, 2)
 
-  Ukee = Multivector[U]
+  Uk = U
+  local AdjU
   for k in 2:N
-    Uprev = last(Ukee)
-    Unext = U*(Uprev - C(Uprev, k-1, N))
-    push!(Ukee, Unext)
+    AdjU = C(Uk, k-1, N) - Uk
+    Uk = -U*AdjU
   end
 
-  U_N_1 = Ukee[end-1]
-  AdjU = C(U_N_1, N-1, N) - U_N_1
-  DetU = -last(Ukee)
-
+  DetU = -grade(Uk, 0) # -Uk should only have scalar part
   AdjU/DetU
-
 end
+
+shirokov_inv(s::Real) = inv(s)
 
 function Base.isapprox(M::MT, N::MT2; kwargs...) where {MT<:CliffordNumber, MT2<:CliffordNumber} 
   mapreduce((b,c)->isapprox(b,c; kwargs...), (acc,e)->acc && e, Multivector(M), Multivector(N))

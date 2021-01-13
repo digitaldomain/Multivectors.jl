@@ -149,7 +149,7 @@ using .CGA
   @test i+j == Multivector(i) + Multivector(j) == j+i == Multivector(i) + j == i + Multivector(j)
   @test i+j+k == i+(j+k) == (i+k)+j 
 
-  v = i+j+k+1.0
+  v = i*1.1+j+k+1.2
   @test Multivectors.Δⱼ(v, 1) == involute(v)
   @test Multivectors.Δⱼ(v, 2) == ~v
   @test prune(shirokov_inv(i+j+k)*(i+j+k)) ≈ 1.0
