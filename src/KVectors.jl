@@ -312,11 +312,11 @@ return a set of reciprocal frame vectors where fᵢ⋅fʲ = δᵢʲ
 
 only valid for metric vectors
 """
-function reciprocal_frame(fᵢ::Vector{K}) where {T,K<:Union{KVector{T}, Blade{T}}}
+function reciprocal_frame(fᵢ::Vector{K}) where {K<:Union{KVector, Blade}}
   Fn⁻¹ = inv(reduce(∧, fᵢ))
 
   map(1:length(fᵢ)) do i
-    ((-one(T))^(i-1)) * reduce(∧, vcat(fᵢ[1:i-1], fᵢ[i+1:end])) * Fn⁻¹    
+    ((-1)^(i-1)) * reduce(∧, vcat(fᵢ[1:i-1], fᵢ[i+1:end])) * Fn⁻¹
   end
 end
 

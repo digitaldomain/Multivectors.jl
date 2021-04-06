@@ -184,5 +184,21 @@ using .G5
     @test C∧⋆(A) == (C⋅A)pseudoscalar(A)
     @test B∧⋆(C) == (B⋅C)pseudoscalar(A)
   end
+
+  #!me need to consider Browne/chakravala's complement of the complement axiom
+  α = 1.0*g3.e₁₂
+  @test α∧⋆α == α⋅α*g3.e₁₂₃
+  @test ⋆α == 1.0g3.e₃ == ⋆(1.0g3.e₁∧1.0g3.e₂) == first(prune(g3.KVector([1.0,0,0]×[0,1.0,0])))
+  @test α⋅α == det(α, α)
+
+  x = 1.0g3.e₁; y = 1.0g3.e₂; z = 1.0g3.e₃;
+  #!me failing because we use left contraction as inner product. we want to use Browne/chakravala
+  #!me use OG inner product!  <~v*u>ᵤ₋ᵥ   then ⋆(x∧y) == x×y and ⋆(x×y) == x∧y and x,y,z,x cycling works
+  @test ⋆(x∧y) == x×y 
+  @test ⋆(x×y) == x∧y
+  @test ⋆(x∧y) == z
+  @test ⋆(y∧z) == x
+  @test ⋆(z∧x) == y
+  @test det(hcat(coords(x), coords(y), coords(⋆(x∧y)))) > 0
 end
 
