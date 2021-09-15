@@ -80,7 +80,7 @@ using .KG3
 
   @test eltype(a) <: Blade
   @test size(a) == (2,)
-  @test a == KVector([1.0,0.0,3.0]) |> Multivectors.prune
+  @test a == KVector([1.0,0.0,3.0], KG3) |> Multivectors.prune
   @test sort_basis(1.0e₂) == 1.0e₂
   @test convert(KVector, 1.0e₂) == KVector(1.0e₂)
   @test first(a) == a[1]

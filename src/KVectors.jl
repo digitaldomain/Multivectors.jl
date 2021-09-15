@@ -76,12 +76,18 @@ KVector(uv::C, 𝐼::Blade{KT,N}) where {T, N, KT, C<:SVector{N,T}} = KVector(uv
 
 KVector(s::T) where T<:Real = s
 
-function KVector(uv::C) where {T, N, C<:SVector{N,T}} 
-  @warn "resolving Blade types in top-level module via dual(1)"
-  KVector(uv.*(basis_1blades(dual(1))))
+function KVector(uv::C, ns::Module) where {T, N, C<:SVector{N,T}} 
+  KVector(uv.*(basis_1blades(pseudoscalar(ns))))
 end
 
-KVector(uv::A) where {T<:Real, A<:Vector{T}} = KVector(SVector{length(uv)}(uv))
+
+function KVector(uv::C, ns::Bool = false) where {T, N, C<:SVector{N,T}} 
+  @warn "resolving Blade types in top-level module"
+  KVector(uv, Main)
+end
+
+KVector(uv::A, ns::MN=false) where {T<:Real, A<:Vector{T}, MN<:Union{Bool, Module}} = KVector(SVector{length(uv)}(uv), ns)
+
 KVector(uv::A, 𝐼::Blade{KT,N}) where 
   {T<:Real, A<:Vector{T}, N, KT} = 
   KVector(SVector{length(uv)}(uv), 𝐼)
@@ -140,6 +146,14 @@ dual(b::KVector{T,K,0}) where {T,K} = b
 "apply ! to all Blades in this KVector"
 Base.:!(b::B) where {B<:KVector} = dual(b)
 
+
+#rc(b::KVector{T,K}) where {T,K} = K==grade(pseudoscalar(first(b))) ? b.k[1].x : KVector(rc.(b), parentmodule(typeof(first(b))))
+rc(b::KVector{T,K}) where {T,K} = K==grade(pseudoscalar(first(b))) ? b.k[1].x : sum(rc.(b))
+rc(b::KVector{T,K,0}) where {T,K} = b
+#lc(b::KVector{T,K}) where {T,K} = K==grade(pseudoscalar(first(b))) ? b.k[1].x : KVector(lc.(b), parentmodule(typeof(first(b))))
+lc(b::KVector{T,K}) where {T,K} = K==grade(pseudoscalar(first(b))) ? b.k[1].x : sum(lc.(b))
+lc(b::KVector{T,K,0}) where {T,K} = b
+
 Base.zero(b::Type{B}) where {T,K,N,B<:KVector{T,K,N}} = NullKVector{T,K}()
 Base.zero(b::KVector) = zero(typeof(b))
 
@@ -179,9 +193,8 @@ sort blades by bases indices in ascending order within the k-vector
 """
 sort_basis(B::BT) where {BT<:KVector} = BT(sort(Vector(B.k); by=subspace∘typeof))
 sort_basis(B::BT) where {BT<:Blade} = B
-Base.:(==)(B::BT, B2::BT) where {BT<:KVector} = sort_basis(B).k == sort_basis(B2).k
-Base.:(==)(B::BT, B2::BT2) where {BT<:KVector, BT2<:KVector} = false
-#Base.:(==)(B::BT, B2::BT2) where {T,K,K2,BT<:KVector{T,K}, BT2<:KVector{T,K2}} = false
+
+Base.:(==)(B::BT, B2::BT2) where {BT<:Union{KVector, Blade}, BT2<:Union{KVector, Blade}} = iszero(B-B2)
 
 Base.promote_rule(::Type{B}, ::Type{K}) where {B<:KVector,K<:Blade} = KVector
 

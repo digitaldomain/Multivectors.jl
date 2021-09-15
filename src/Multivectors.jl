@@ -30,6 +30,7 @@ grades,
 ∨,
 lcontraction,
 rcontraction,
+⨽,
 symmetricdot,
 ∙,
 kvectors,
@@ -38,7 +39,8 @@ cayley_table,
 cayley_matrix_description,
 matrix_representation,
 newton_inv,
-shirokov_inv
+shirokov_inv,
+lift
 
 
 using Base.Iterators
@@ -169,6 +171,8 @@ function pseudoscalar(U::M) where {T, M<:Multivector{T}}
   pseudoscalar(one(T)*e₁)
 end
 
+Base.zero(m::C) where {T, C <:Multivector{T}} = C(zero(T))
+
 Base.conj(m::Multivector) = mapreduce(conj, +, m)
 
 Base.:+(b::KVector{T,K}, c::Multivector{T,L}) where {T,K,L} = Multivector(b) + c
@@ -178,7 +182,7 @@ Base.:+(k::Blade{T,K}, c::Multivector{T,N}) where {T,N,K} = Multivector(KVector(
 Base.:+(c::Multivector{T,K}, v::Blade{T,L}) where {T,K,L} = v+c
 
 Base.:+(c::Multivector{T,K}, s::T) where {T<:Number,K} = Multivector{T,K}(c.s+s,c.B)
-Base.:+(s::R, c::Multivector{T,K}) where {T,R<:Real,K} = c+s
+Base.:+(s::R, c::Multivector{T,K}) where {T,R<:Real,K} = c+T(s)
 
 #Base.:+(b::KVector{T,K}, c::KVector{T,L}) where {T,K,L} = Multivector{T,K}(KVector{T}[b,c])
 #Base.:+(b::KVector{T,K}, c::KVector{T,L}) where {T,K,L} = Multivector{T,K}(KVector{T}[b,c])
@@ -288,8 +292,12 @@ grade(A::M) where {M<:Multivector} = grades(A)[end]
 grade(s::Real, i) = (i==0) ? s : zero(s)
 grade(a::CliffordNumber, i) = grade(Multivector(a), i)
 
-dual(A::M) where {M<:Multivector} = mapreduce(dual,+,[A.B...]; init = Multivector(dual(A.s)))
+scalar_or_ps(A) = iszero(A.s) ? A.s : A.s*pseudoscalar(A)
+
+dual(A::M) where {M<:Multivector} = mapreduce(dual,+,[A.B...]; init = Multivector(scalar_or_ps(A)))
 Base.:!(A::M) where {M<:Multivector} = dual(A)
+rc(A::M) where {M<:Multivector} = mapreduce(rc,+,[A.B...]; init = Multivector(scalar_or_ps(A)))
+lc(A::M) where {M<:Multivector} = mapreduce(lc,+,[A.B...]; init = Multivector(scalar_or_ps(A)))
 
 Base.promote_rule(::Type{M}, ::Type{B}) where {B<:KVector,M<:Multivector} = Multivector
 Base.promote_rule(::Type{M}, ::Type{K}) where {K<:Blade,M<:Multivector} = Multivector
@@ -365,32 +373,34 @@ LinearAlgebra.:(⋅)(A::N, b::T) where {T<:Real, N<:Multivector} = A⋅Multivect
 LinearAlgebra.:(⋅)(A::N, b::T) where {T<:Real, S, N<:Union{KVector{S}, Blade{S}}} = zero(b)
 LinearAlgebra.:(⋅)(a::T1, b::T2) where {T1<:Real, T2<:Real} = a*b
 
-rcontraction(A,B) = reverse(reverse(B)⋅reverse(A))
-
-#==
-rcontraction(A::M,B::N) where {M<:CliffordNumber, N<:CliffordNumber} =
-  rcontraction(Multivector(A), Multivector(B))
-rcontraction(A::M,B::N) where {M<:Multivector,N<:Multivector} = 
-  mapreduce(((b1,b2),)->rcontraction(A[b1], B[b2]), +, Iterators.product(0:grade(A), 0:grade(B)))
-rcontraction(A::M,B::N) where {T, M<:Union{KVector{T}, Blade{T}}, N<:Union{KVector, Blade}} = 
-  (grade(A)>=grade(B)) ? grade(A*B,grade(A)-grade(B)) : zero(T)
-rcontraction(a::T, B::N) where {T<:Real, N<:CliffordNumber} = a*grade(B,0)
-rcontraction(B::N, α::T) where {N<:Multivector, T<:Real} = iszero(B.s) ? zero(α) : rcontraction(B, Multivector(α))
-rcontraction(B::N, α::T) where {N<:CliffordNumber, T<:Real} = rcontraction(Multivector(B), α)
-rcontraction(a::T1, b::T2) where {T1<:Real, T2<:Real} = a*b
-==#
-#==
-LinearAlgebra.:(⋅)(A::M,B::N) where {M<:KVector,N<:KVector} = grade(A*B,grade(B)-grade(A))
-LinearAlgebra.:(⋅)(A::M,B::N) where {M<:KVector,N<:Blade}   = grade(A*B,grade(B)-grade(A))
-LinearAlgebra.:(⋅)(A::M,B::N) where {M<:Blade,N<:KVector}   = grade(A*B,grade(B)-grade(A))
-==#
+rcontraction(A,B) = A∨rc(B)
+rcontraction(A::C, s::S) where {C<:CliffordNumberR, S<:Real} = A*s
+rcontraction(A::C, s::S) where {C<:CliffordNumberR, T, S<:Multivector{T,0}} = A*s[0]
+rcontraction(A::C, s::S) where {C<:Real, T, S<:Multivector{T,0}} = A*s[0]
+rcontraction(A::C, s::S) where {U, C<:Multivector{U,0}, T, S<:Multivector{T,0}} = A[0]*s[0]
+rcontraction(s::S, A::M) where {S<:Real, M<:Multivector} = sum(map(b->rcontraction(s, b), A)) 
+rcontraction(s::S, A::M) where {U, S<:Multivector{U,0}, M<:Multivector} = sum(map(b->rcontraction(s, b), A)) 
+const ⨽ = rcontraction
 
 """
   ∨(a,b)
   
-Regressive product.  The dual of the wedge of the duals of two k-vectors or multivectors
+Regressive product.           
+Related to the ∧ product 
+
+a∨b = (̄a̲∧̄b̲)̄
+
+or 
+right_complement(left_complement(a)∧left_complement(b))  
+or
+left_complement(right_complement(a)∧right_complement(b))  
 """
-∨(a, b) = dual(dual(a)∧dual(b))
+∨(a, b) = rc(lc(a)∧lc(b))
+
+∨(s::T, b::C) where {T<:Real, C<:CliffordNumber} = zero(s)
+∨(b::C, s::T) where {T<:Real, C<:CliffordNumber} = zero(s)
+∨(s::M, b::C) where {T, M<:Multivector{T,0}, C<:CliffordNumber} = zero(s)
+∨(b::C, s::M) where {T, M<:Multivector{T,0}, C<:CliffordNumber} = zero(s)
 
 """
   A×B
@@ -581,6 +591,8 @@ outermorphism(L, M::MT) where MT<:Multivector = scalar(M) + mapreduce(k->outermo
 
 Base.in(be::BK, bs::BK2) where {BK<:CliffordNumber, BK2<:CliffordNumber} = iszero(be∧bs)
 
+Base.:^(B::T, n::Integer) where T<:CliffordNumber = prod([B for i in 1:n])
+
 """
     exp(M)
 
@@ -601,11 +613,13 @@ function Base.exp(M::T; tol = eps(fieldtype(M))) where T<:CliffordNumber
     d = LinearAlgebra.norm_sqr(eᴹ′-eᴹ)
     eᴹ = eᴹ′
     guard -= 1
-    d > tol || break
+    abs(d) > tol || break
   end
 
   eᴹ
 end
+
+Base.exp(B::CliffordNumber, n) = 1.0+sum([ (B^i)/prod(1:i) for i in 1:n])
 
 """
     log(M)
@@ -700,5 +714,76 @@ shirokov_inv(s::Real) = inv(s)
 function Base.isapprox(M::MT, N::MT2; kwargs...) where {MT<:CliffordNumber, MT2<:CliffordNumber} 
   mapreduce((b,c)->isapprox(b,c; kwargs...), (acc,e)->acc && e, Multivector(M), Multivector(N))
 end
+
+"""
+    lift(k, m)
+
+lift a member (Multivector, KVector, or Blade) of a lower dimensional algebra k into
+the even subalgebra of another algebra that includes the non-euclidean basis 1-blade m.
+The bivector generated by lifting is isomorphic to the original member.
+
+example:
+
+    julia> module f3
+             using Multivectors
+             @generate_basis("++-")
+           end
+
+    julia> using .f3
+
+    julia> @generate_basis("++") 
+
+    julia> lift.([1e₁, 2e₂, 12e₁₂], f3.e₃)
+    3-element Array{Blade{Int64,2},1}:
+      1Main.f3.e₁₃
+      2Main.f3.e₂₃
+     12Main.f3.e₁₂
+
+    julia> ans .* ans
+    3-element Array{Int64,1}:
+        1
+        4
+     -144
+
+    julia> [1e₁, 2e₂, 12e₁₂] .* [1e₁, 2e₂, 12e₁₂]
+    3-element Array{Int64,1}:
+        1
+        4
+     -144
+  
+"""
+lift(k, m::Type{T}) where T<:e₋ = sum([lift(i, m) for i in k])
+
+lift(k::Vector, m::Type{T}) where T<:e₋ = sum([lift(i, m) for i in k])
+
+lift(s::Real, m::Type{T}) where T<:e₋ = s
+
+function lift(b::Blade{R, 1}, m::Type{T}) where {R, T<:e₋} 
+  n = grade(pseudoscalar(m))
+  scalar(b) * (alle(m,n)[subspace(b)]∧m)
+end
+
+function lift(b::Blade{R, 2}, m::Type{T}) where {R, T<:e₋}
+  n = grade(pseudoscalar(m))
+  scalar(b) * reduce(∧, alle(m,n)[subspace(b)])
+end
+
+lift(k, F::Module) = sum([lift(i, F) for i in k])
+
+lift(k::Vector, F::Module) = sum([lift(i, F) for i in k])
+
+lift(s::Real, F::Module) = s
+
+function lift(b::Blade{T, 1}, F::Module) where T 
+  n = grade(pseudoscalar(F))
+  scalar(b) * (alle(F,n)[subspace(b)]∧last(basis_1blades(F)))
+end
+
+function lift(b::Blade{T, 2}, F::Module) where T
+  n = grade(pseudoscalar(F))
+  scalar(b) * reduce(∧, alle(F,n)[subspace(b)])
+end
+
+
 
 end # module
