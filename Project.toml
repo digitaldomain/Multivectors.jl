@@ -1,7 +1,8 @@
 name = "Multivectors"
 uuid = "7984e3fa-4652-481f-a8e5-141db0974c74"
 authors = ["Michael Alexander Ewert <mewert@d2.com>"]
-version = "0.2.1"
+version = "0.3.0"
+
 
 [deps]
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
@@ -12,7 +13,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
-Combinatorics = "1"
+Combinatorics = "0, 1"
 FunctionWrappers = "1"
 StaticArrays = "0, 1"
 julia = "^1.3"

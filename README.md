@@ -185,7 +185,7 @@ Transform a 1-vector with the sandwich product.
 
     julia> v = reverse(q)*(1.0e₁+1.0e₂+1.0e₃)*q
 
-    julia> grade(v, 1) |> prune∘sortbasis
+    julia> grade(v, 1) |> prune∘sort_basis
     2-element KVector{Float64,1,2}:
      1.414213562373095e₁
                    1.0e₃

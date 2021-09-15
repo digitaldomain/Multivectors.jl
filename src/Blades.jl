@@ -69,7 +69,11 @@ magnitude,
 scalar,
 ⋆,
 factor,
-untype
+untype,
+outermorphism,
+fieldtype,
+lc,
+rc
 
 using Combinatorics
 using Base.Iterators
@@ -112,6 +116,7 @@ quadmetric(::Type{E}) where {T, E<:e⁰{T}} = zero(T)
 tosub(i) = [ '₁','₂','₃','₄','₅','₆','₇','₈','₉' ][i]
 tosup(i) = [ '¹','²','³','⁴','⁵','⁶','⁷','⁸','⁹' ][i]
 
+Blade{T, N}(b::B) where {T,N,T2, B<:Blade{T2,N}} = T(b.x)*untype(b)
 
 export ZForm
 
@@ -255,6 +260,18 @@ The highest grade blade in the algebra.
 pseudoscalar(a::K) where {T<:Number,K<:Blade{T}} = pseudoscalar(K)(one(T))
 
 """
+    pseudoscalar(M::Module)
+
+The pseudoscalar associated with algebra defined in module M  
+The pseudoscalar is the singleton blade that spans the entire space.  
+The highest grade blade in the algebra.
+"""
+pseudoscalar(M::Module) = pseudoscalar(M.e₁)
+
+#!me put into macro and replace Main with current module
+#pseudoscalar() = pseudoscalar(Main)
+
+"""
     dual(k)
 
 Map from the subspace k to the complementary dual subspace n-k where n is the highest grade of the algebra.
@@ -351,6 +368,8 @@ Array with all k-blade types where k <= n"
 """
 alle(gamodule, n::T) where {T<:Integer} = alle(gamodule, repeat("+",n))
 
+alle(m::Type{T}, n::Integer) where T<:Blade = alle(parentmodule(m), n)
+
 """ 
     alld(modulename, n) 
 
@@ -396,6 +415,12 @@ function dual_expr( ns, ename, dual_fcn )
             Expr(:<:, :T, ename)), Expr(:block,
                                          Expr(:call, dual_fcn, :k)
                                         ))
+end
+
+function scalar_expr()
+  Expr(:struct, false, Expr(:curly, :e𝑠, :T),
+       Expr(:block,
+            Expr(:(::), :x, :T)))
 end
 
 """
@@ -584,6 +609,7 @@ end
 
 subspace( b::K ) where {K<:Blade} = subspace(K)
 
+#!me why this way?  inconsitent to return array for grades > 1 and atom for grade 1
 @generated function subspace( b::K ) where {T,K<:Blade{T,1}}
   si = subspace(b)[1]
   :($si)
@@ -617,7 +643,33 @@ function swap_parity(eab)
   (eab,m)
 end
 
-@generated function Base.:*(a::T, b::U) where {S<:Number,T<:Blade{S}, R<:Number,U<:Blade{R}}
+assemble_eᵢ(g::Vector{Int}) = Symbol("e"*mapreduce(tosub, *, g))
+
+Base.:*(a::T, b::U) where {S<:Number,T<:Blade{S}, R<:Number,U<:Blade{R}} = mul(a, b)
+
+"""
+    swap_parity(a, b)
+
+get sign resulting from shuffling a into b.
+"""
+@generated function swap_parity(a::T, b::U) where {S<:Number,T<:Blade{S}, R<:Number,U<:Blade{R}}
+  swap_parity(vcat(subspace(a), subspace(b)))[2]
+end
+
+
+"""
+    pmul(a, b)
+
+Poincare multiplication for degenerate basis.  Treats degenerate basis elements as if they square to 1 rather than 0.
+Useful for projective geometric algebras.
+"""
+function pmul(a::T, b::U) where {S<:Number,T<:Blade{S}, R<:Number,U<:Blade{R}}
+  mul(a, b, true)
+end
+
+pmul(a) = a
+
+@generated function mul(a::T, b::U, euclideanize_degenerate=nothing) where {S<:Number,T<:Blade{S}, R<:Number,U<:Blade{R}}
   ns = parentmodule(a)
   @assert ns == parentmodule(b)
 
@@ -627,7 +679,6 @@ end
   tosyme(eᵢ) = tosym(ns,"e"*toscript(eᵢ))
 
   # effectively implement the geometric algebra's "multiplication table" at compile time
-  allzero = false
   m = one(S)
   nea = length(ea)
   eab = Vector{Tuple{Int,Int}}()
@@ -640,11 +691,15 @@ end
       aswaps = nea-i 
       totalswaps = ((j-1)+aswaps)
       
-      m = m*(-one(S))^totalswaps
-      m = m*(FunctionWrapper{S, 
-                             Tuple{Val{tosyme(eaᵢ)}, 
-                                   Val{tosyme(eb[j])}}}(quadmetric))(Val(tosyme(eaᵢ)), 
-                                                                     Val(tosyme(eb[j])))
+      ee = (FunctionWrapper{S, 
+                               Tuple{Val{tosyme(eaᵢ)}, 
+                                     Val{tosyme(eb[j])}}}(quadmetric))(Val(tosyme(eaᵢ)), 
+                                                                       Val(tosyme(eb[j])))
+      if ee==0 && eaᵢ == eb[j] && euclideanize_degenerate != Nothing
+        ee = one(S)
+      end
+      m = (-one(S))^totalswaps*ee*m
+
       splice!(eb, j)
     end
   end
@@ -672,7 +727,6 @@ end
     end
   end
 end
-
 
 """convenience operator to build higher grade Blade Types.  indices must be in acending order"""
 function Base.:*(::Type{A}, ::Type{B}) where {A<:Blade, B<:Blade}
@@ -841,10 +895,41 @@ end
 det( a::A, b::B ) where {T, N, M, A<:Blade{T,N}, B<:Blade{T,M}} = zero(T)
 
 """
+    rc(b::Blade)
+
+right complement of the Blade b.  b̂∧rc(b) = 𝐼
+"""
+function rc(b::B) where {T, B<:Blade{T}}
+  brb = pmul(b, ~b)
+  rbI = pmul(~b, pseudoscalar(b))
+
+  sign(brb)*rbI
+end
+
+const right_complement = rc
+
+rc(s::Real) = iszero(s) ? 0 : s*abs(dual(one(s)))
+lc(s::Real) = iszero(s) ? 0 : s*abs(dual(one(s)))
+
+"""
+    lc(b::Blade)
+
+left complement of the Blade b.  lc(b)∧b̂ = 𝐼
+"""
+function lc(b::B) where {T, B<:Blade{T}}
+  brb = pmul(b, ~b)
+  Irb = pmul(pseudoscalar(b), ~b)
+
+  sign(brb)*Irb
+end
+
+const left_complement = lc
+
+"""
     ⋆(k, 𝑖)
 
 Hodge star operator mapping k to it's Hodge dual relative to a given psuedovector 𝑖.
-Defined by k∧⋆(k) == (k⋅k)*𝑖 where k is generated from orthonormal 1-vectors.
+Defined by k∧⋆(k) == (k⨽k)*𝑖 where k is generated from orthonormal 1-vectors.
 𝑖 is the unit psuedoscalar for a subspace containing k.
 """
 @generated function ⋆(b::B, i::BI) where {T, B<:Blade{T}, BI<:Blade}
@@ -856,8 +941,9 @@ Defined by k∧⋆(k) == (k⋅k)*𝑖 where k is generated from orthonormal 1-ve
   # 'filling holes' is so we can make k∧⋆(k) == 𝐼. i.e. ⋆k = holes∧𝐼[n:end] * signflip
   subpseudo,sflip = swap_parity(vcat(sb,holes))
   # then adjust with sign of k⋅k
-  sflip = sflip*swap_parity(vcat(sb,sb))[2]
-  :(T($sflip)*sign(b)*abs(b*i))
+  #sflip = sflip*swap_parity(vcat(sb,sb))[2]
+  #sflip = sflip*sign(b⨽b)
+  :(T($sflip)*pmul(one(b),~one(b))*sign(b)*abs(pmul(b*i)))
 end
 
 ⋆(b::B, i::Type{BI}) where {T, B<:Blade{T}, BI<:Blade} = ⋆(b, i(one(T)))
@@ -910,6 +996,8 @@ i.e. basis_1blades(e₁) will depend the dimension of the algebra e₁ was gener
 basis_1blades( k::B ) where {B<:Blade} = basis_kblades(k,1)
 basis_1blades( k::Type{B} ) where {B<:Blade} = basis_kblades(k,1)
 
+basis_1blades( ns::Module ) = alle(ns, grade(pseudoscalar(ns)))[1:grade(pseudoscalar(ns))]
+
 """
     factor(b)
 
@@ -931,3 +1019,33 @@ end
   une = es[findfirst(eᵢ->eᵢ{T} == b, es)]
   :($une)
 end
+
+
+"""
+    outermorphism(L, b)
+
+apply the linear transform L to the geometric algebra object b as an outermorphism.
+
+the outermorphism property
+L(a∧b∧c) = L(a)∧L(b)∧L(c)
+"""
+function outermorphism(L, b::B) where B<:Blade
+  sb = factor(b) # (scalar, followed by all 1-blades)
+  𝐼 = pseudoscalar(b)  # need this to construct KVector from coords
+  mapreduce(bᵢ->KVector(L*coords(one(bᵢ)), 𝐼), ∧, sb[2:end])*sb[1]
+end
+
+Base.in(be::B, bs::B2) where {B<:Blade, B2<:Blade} = (subspace(B) ∩ subspace(B2)) == subspace(B)
+
+function Base.isapprox(b::B, c::B2; kwargs...) where {B<:Blade, B2<:Blade} 
+  untype(b) == untype(c) && isapprox(scalar(b), scalar(c); kwargs...)
+end
+
+fieldtype(b::B) where {F<:Number, B<:Blade{F}} = F
+
+function Base.promote(a::ET, b::ES) where {T<:Number, S<:Number, ET<:Blade{T}, ES<:Blade{S}}
+  ap,bp = promote(a.x, b.x)
+  (untype(a)(ap), untype(b)(bp))
+end
+
+

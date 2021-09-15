@@ -29,12 +29,13 @@ KVectors are containers for Blades of the same grade.  New Blade elements are ad
 export 
 KVector,
 NullKVector,
-sortbasis,
+sort_basis,
 isnull,
 coords,
 prune,
 normalize_safe,
-basis_1vector
+basis_1vector,
+reciprocal_frame
 
 include("Blades.jl")
 using StaticArrays
@@ -73,12 +74,20 @@ KVector(kv::KV) where KV<:KVector = kv
 
 KVector(uv::C, 𝐼::Blade{KT,N}) where {T, N, KT, C<:SVector{N,T}} = KVector(uv.*(basis_1blades(𝐼)))
 
-function KVector(uv::C) where {T, N, C<:SVector{N,T}} 
-  @warn "resolving Blade types in top-level module via dual(1)"
-  KVector(uv.*(basis_1blades(dual(1))))
+KVector(s::T) where T<:Real = s
+
+function KVector(uv::C, ns::Module) where {T, N, C<:SVector{N,T}} 
+  KVector(uv.*(basis_1blades(pseudoscalar(ns))))
 end
 
-KVector(uv::A) where {T<:Real, A<:Vector{T}} = KVector(SVector{length(uv)}(uv))
+
+function KVector(uv::C, ns::Bool = false) where {T, N, C<:SVector{N,T}} 
+  @warn "resolving Blade types in top-level module"
+  KVector(uv, Main)
+end
+
+KVector(uv::A, ns::MN=false) where {T<:Real, A<:Vector{T}, MN<:Union{Bool, Module}} = KVector(SVector{length(uv)}(uv), ns)
+
 KVector(uv::A, 𝐼::Blade{KT,N}) where 
   {T<:Real, A<:Vector{T}, N, KT} = 
   KVector(SVector{length(uv)}(uv), 𝐼)
@@ -98,15 +107,18 @@ Base.:+(b::KA, c::KB) where {T<:Number,K, KA<:Blade{T,K}, KB<:Blade{T,K}} =
 Base.:-(b::KA, c::KB) where {T<:Number,K, KA<:Blade{T,K}, KB<:Blade{T,K}} = 
   KVector{T,K,2}(SArray{Tuple{2},Blade{T,K},1,2}(b,-c))
 
-function Base.:+(b::V, k::KVector{T,K,N}) where {T,K, V<:Blade{T,K},N} 
+function Base.:+(b::V, k::KVector{TK,K,N}) where {TK,TB,K, V<:Blade{TB,K},N} 
+  T = promote_type(TK, TB)
   i = findfirst(v->typeof(v)==V, k.k)
   if i == nothing
+    #KVector{T,K,N+1}(vcat(Blade{T,K}[T(scalar(b))*untype(b)],k.k))
     KVector{T,K,N+1}(vcat(Blade{T,K}[b],k.k))
   else
     KVector(setindex(k.k,k.k[i]+b,i))
   end
 end
 
+Base.:+(k::KVector{TK,K,N}, b::V) where {TK,TB,K, V<:Blade{TB,K},N} = b+k
 Base.:+(b::B, k::V) where {T,K,B<:KVector{T,K},V<:Blade{T,K}} = k+b
 Base.:+(b::KVector{T,K}, c::KVector{T,K}) where {T,K} = reduce( (bc,v)->v+bc, b.k; init=c )
 Base.:-(b::B, k::V) where {T,K,B<:KVector{T,K},V<:Blade{T,K}} = -k+b
@@ -126,13 +138,21 @@ grade(b::KVector{T,K}) where {T,K} = K
 grade(b::KVector{T,K}, i::Integer) where {T,K} = i==K ? b : zero(T)
 
 "apply dual to all Blades in this KVector"
-dual(b::KVector{T,K}) where {T,K} = KVector(dual.(b))
+dual(b::KVector{T,K}) where {T,K} = K==grade(pseudoscalar(first(b))) ? b.k[1].x : KVector(dual.(b))
 dual(b::KVector{T,K,0}) where {T,K} = b
 "apply ⟂ to all Blades in this KVector"
 ⟂(b::KVector{T,K})  where {T,K} = KVector((⟂).(b)) 
 ⟂(b::KVector{T,K,0})  where {T,K} = b
 "apply ! to all Blades in this KVector"
 Base.:!(b::B) where {B<:KVector} = dual(b)
+
+
+#rc(b::KVector{T,K}) where {T,K} = K==grade(pseudoscalar(first(b))) ? b.k[1].x : KVector(rc.(b), parentmodule(typeof(first(b))))
+rc(b::KVector{T,K}) where {T,K} = K==grade(pseudoscalar(first(b))) ? b.k[1].x : sum(rc.(b))
+rc(b::KVector{T,K,0}) where {T,K} = b
+#lc(b::KVector{T,K}) where {T,K} = K==grade(pseudoscalar(first(b))) ? b.k[1].x : KVector(lc.(b), parentmodule(typeof(first(b))))
+lc(b::KVector{T,K}) where {T,K} = K==grade(pseudoscalar(first(b))) ? b.k[1].x : sum(lc.(b))
+lc(b::KVector{T,K,0}) where {T,K} = b
 
 Base.zero(b::Type{B}) where {T,K,N,B<:KVector{T,K,N}} = NullKVector{T,K}()
 Base.zero(b::KVector) = zero(typeof(b))
@@ -167,19 +187,19 @@ Hodge star operator mapping k to it's Hodge dual.
 ⋆(k::K) where {K<:KVector} = mapreduce(⋆,+,k)
 
 """
-    sortbasis(b)
+    sort_basis(b)
 
 sort blades by bases indices in ascending order within the k-vector
 """
-sortbasis(B::BT) where {BT<:KVector} = BT(sort(Vector(B.k); by=subspace∘typeof))
-sortbasis(B::BT) where {BT<:Blade} = B
-Base.:(==)(B::BT, B2::BT) where {BT<:KVector} = sortbasis(B).k == sortbasis(B2).k
-Base.:(==)(B::BT, B2::BT2) where {BT<:KVector, BT2<:KVector} = false
-#Base.:(==)(B::BT, B2::BT2) where {T,K,K2,BT<:KVector{T,K}, BT2<:KVector{T,K2}} = false
+sort_basis(B::BT) where {BT<:KVector} = BT(sort(Vector(B.k); by=subspace∘typeof))
+sort_basis(B::BT) where {BT<:Blade} = B
+
+Base.:(==)(B::BT, B2::BT2) where {BT<:Union{KVector, Blade}, BT2<:Union{KVector, Blade}} = iszero(B-B2)
 
 Base.promote_rule(::Type{B}, ::Type{K}) where {B<:KVector,K<:Blade} = KVector
 
 prune(k::KVector, epsi = eps()) = sum(Iterators.filter(x->abs(scalar(x)) > epsi, k))
+prune(b::Blade, epsi = eps()) = abs(scalar(b)) > epsi ? b : scalar(b)
 
 """
     ∧(a,b)
@@ -233,8 +253,8 @@ for length(a) = 2, gram( a, u ) = [ a₁⋅u₁ a₁⋅u₂ ;
                                     a₂⋅u₁ a₂⋅u₂ ]
 """
 function gram(a::K,u::L) where {K<:KVector, L<:KVector}
-  a = sortbasis(prune(a))
-  u = sortbasis(prune(u))
+  a = sort_basis(prune(a))
+  u = sort_basis(prune(u))
   n = length(a)
   if n != length(u)
     zero(eltype(eltype(a)))
@@ -283,4 +303,34 @@ function coords( k::KV ) where {T,K,KV<:KVector{T,K}}
 end
 
 coords( b::Blade ) = coords(KVector(b))
+
+factor( k::K ) where K<:KVector = factor.(k)
+
+outermorphism(L, k::K) where K<:KVector = mapreduce(b->outermorphism(L, b), +, k)
+
+Base.in(be::BK, bs::BK2) where {BK<:Union{Blade,KVector}, BK2<:Union{Blade,KVector}} = iszero(be∧bs)
+
+fieldtype(k::K) where {F<:Number, K<:KVector{F}} = F
+
+function Base.isapprox(k::K, l::K2; kwargs...) where {K<:KVector, K2<:KVector} 
+  mapreduce( (b,c)->isapprox(b,c; kwargs...), (acc,e)->acc && e, (sort_basis∘prune)(k), (sort_basis∘prune)(l))
+end
+
+"""
+    reciprocal_frame(fᵢ)
+
+given a set of 1-blades and/or  1-vectors defining a frame of reference,
+
+return a set of reciprocal frame vectors where fᵢ⋅fʲ = δᵢʲ
+
+only valid for metric vectors
+"""
+function reciprocal_frame(fᵢ::Vector{K}) where {K<:Union{KVector, Blade}}
+  Fn⁻¹ = inv(reduce(∧, fᵢ))
+
+  map(1:length(fᵢ)) do i
+    ((-1)^(i-1)) * reduce(∧, vcat(fᵢ[1:i-1], fᵢ[i+1:end])) * Fn⁻¹
+  end
+end
+
 

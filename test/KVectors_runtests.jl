@@ -76,12 +76,12 @@ using .KG3
   e₁, e₂, e₃ = alle(KG3, 3)[1:3]
   𝐼 = alle(KG3,3)[end]
 
-  a = sortbasis(1.0e₁ + 3.0e₃)
+  a = sort_basis(1.0e₁ + 3.0e₃)
 
   @test eltype(a) <: Blade
   @test size(a) == (2,)
-  @test a == KVector([1.0,0.0,3.0]) |> Multivectors.prune
-  @test sortbasis(1.0e₂) == 1.0e₂
+  @test a == KVector([1.0,0.0,3.0], KG3) |> Multivectors.prune
+  @test sort_basis(1.0e₂) == 1.0e₂
   @test convert(KVector, 1.0e₂) == KVector(1.0e₂)
   @test first(a) == a[1]
   @test firstindex(a) == 1
@@ -108,7 +108,7 @@ using .KG3
   @test a/2.0 == a*0.5
   @test !(a == a∧e₂(1.0))
 
-  @test coords(a) == scalar.(sortbasis(a+0.0e₂))
+  @test coords(a) == scalar.(sort_basis(a+0.0e₂))
   @test coords(a[1]) == [scalar(a[1]), 0.0, 0.0]
   @test Multivectors.prune(KVector(coords(a) .* basis_1blades(a))) == a
   @test norm(basis_1vector(a)) == sqrt(3.0)
@@ -123,6 +123,21 @@ using .KG3
   @test det(1.0e₁+1.0e₂, 1.0e₁+1.0e₂) == 1.0
   @test det(1.0e₁+1.0e₂, 1.0e₁+1.0e₂+1.0e₃) == 0.0
   @test cos(KVector([1.0,0.0,0.0], 𝐼), KVector([1.0,1.0,0.0], 𝐼)) ≈ cos(π/4)
+
+  fᵢ = [rand()*e₁ + rand()*e₂ + rand()*e₃ for i in 1:3]
+  fⁱ = reciprocal_frame(fᵢ)
+  @test [a⋅b for a in fᵢ for b in fⁱ] |> sum ≈ 3.0
+
+  # this is a neat property of reciprocal frames fᵢfⁱ == n via geometric product,  an integer!
+  @test grade(mapreduce(*, +, fᵢ, fⁱ), 0) ≈ 3.0
+  @test norm(grade(mapreduce(*, +, fᵢ, fⁱ), 0)) ≈ 3.0
+  # not neccessarily parrallel 
+  @test !(norm.(map(∧, fᵢ, fⁱ)) |> sum ≈ 0.0)  
+  # only if source frame was orthogonal 
+  eᵢ = 1.0 .* basis_1blades(e₁)
+  eⁱ = reciprocal_frame(eᵢ)
+  @test norm.(map(∧,eᵢ, eⁱ)) |> sum ≈ 0.0
+  
 end
 
 @testset "Null KVectors" begin

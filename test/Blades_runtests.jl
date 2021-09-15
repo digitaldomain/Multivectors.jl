@@ -135,10 +135,11 @@ using .g2
   @test ⋆(1e₁) == 1e₂
   @test ⋆(1e₂) == -1e₁
   ot = -1.0e₁₂
-  @test ot∧⋆(ot) == (ot⋅ot)pseudoscalar(ot)
-  @test ⋆(2.0e₁₂) == -2.0
+  @test ot∧⋆(ot) == (ot*~ot)pseudoscalar(ot)
+  #@test ot∧⋆(ot) == (ot*~ot)pseudoscalar(ot)
+  @test ⋆(2.0e₁₂) == 2.0
   ot = 2.0e₁₂
-  @test ot∧⋆(ot) == (ot⋅ot)pseudoscalar(ot)
+  @test ot∧⋆(ot) == (ot*~ot)pseudoscalar(ot)
 
   @test raise(e₁) == alld(g2,2)[1]
   @test lower(raise(e₁₂)) == e₁₂
@@ -165,24 +166,92 @@ module G5
 end
 using .G5
 
+module STA
+  using Multivectors
+  @generate_basis("+---")
+end
+using .STA
+
 @testset "hodge star" begin
   rb = alle(G5, 5)[1:5]
   𝑖 = mapreduce(eᵢ->1.0*eᵢ, ∧, rb[1:4])
+  #==
+  𝑖 = mapreduce(eᵢ->1.0*eᵢ, ∧, rb[1:5])
   for i in 1:100
     A = rand()rand(rb[1:3])∧rand()rand(rb[1:3])
     B = rand()rand(rb[1:3])∧rand()rand(rb[1:3])
-    @test A∧⋆(B, 𝑖) == (A⋅B)*𝑖
+    if grade(A) == grade(B)
+      @test A∧⋆(B, 𝑖) == (B*~A)*𝑖
+    end
   end
+  ==#
 
+  #==
+  #!me this rule only applies to k-vectors of the same grade
   for i in 1:1000
     A = rand()rand(rb[1:5])
     B = rand()rand(rb[1:5])∧rand()rand(rb[1:5])
-    @test A∧⋆(B) == (A⋅B)pseudoscalar(A)
-    @test B∧⋆(A) == (B⋅A)pseudoscalar(A)
+    @test A∧⋆(B) == (B*~A)pseudoscalar(A)
+    @test B∧⋆(A) == (A*~B)pseudoscalar(A)
     C = rand()rand(rb[1:5])∧rand()rand(rb[1:5])∧rand()rand(rb[1:5])
-    @test A∧⋆(C) == (A⋅C)pseudoscalar(A)
-    @test C∧⋆(A) == (C⋅A)pseudoscalar(A)
-    @test B∧⋆(C) == (B⋅C)pseudoscalar(A)
+    @test A∧⋆(C) == (C*~A)pseudoscalar(A)
+    @test C∧⋆(A) == (A*~C)pseudoscalar(A)
+    @test B∧⋆(C) == (C*~B)pseudoscalar(A)
   end
+  ==#
+
+  #!me need to consider Browne/chakravala's complement of the complement axiom
+  #Chakravala's Theorem: a∧⋆b = (~a∨⋆~b)𝐼  ←→  a⋅b = a∨⋆b = (~a∨⋆~b)𝐼⁻¹
+  #Brown: ⋆(a∧b) = ⋆a∨⋆b  ←→ a⋅b = a∨⋆b  where ⋆ is right complement ( euclidean!!!, read chapter 5 ) 
+  #Lengyal:  a∨b = rc(lc(a)∧lc(b)) = lc(rc(a)∧rc(b))
+  α = 1.0*g3.e₁₂
+  @test α∧⋆α == α*~α*g3.e₁₂₃
+  @test ⋆α == 1.0g3.e₃ == ⋆(1.0g3.e₁∧1.0g3.e₂) == first(prune(g3.KVector([1.0,0,0]×[0,1.0,0], g3)))
+  @test α⋅α == det(α, α)
+
+  x = 1.0g3.e₁; y = 1.0g3.e₂; z = 1.0g3.e₃;
+  cx,cy,cz = coords.((x,y,z))
+  #!me failing because we use left contraction as inner product. we want to use Browne/chakravala
+  #!me use OG inner product!  <~v*u>ᵤ₋ᵥ   then ⋆(x∧y) == x×y and ⋆(x×y) == x∧y and x,y,z,x cycling works
+  @test ⋆(x∧y) == KVector(cx×cy, g3)
+  @test ⋆KVector(cx×cy, g3) == x∧y
+  @test ⋆(x∧y) == KVector(cz, g3)
+  @test ⋆(y∧z) == KVector(cx, g3)
+  @test ⋆(z∧x) == KVector(cy, g3)
+  @test det(hcat(coords(x), coords(y), coords(⋆(x∧y)))) > 0
+
+  @test sum((scalar).([x, y, z] .* (⋆).([x, y, z]))) == 3.0
+
+
+  t,x,y,z = map(one, alle(STA, 4)[1:4])
+  # from wikipedia on hodge star for minkowski spacetime
+  @test (⋆).([t*x, t*y, t*z, x*y, x*z, y*z]) == [-y*z, x*z, -x*y, t*z, -t*y, t*x]
+  tx = t*x
+  #@test tx∧⋆(tx) == (tx*~tx)*(t∧x∧y∧z)
+  #===
+  
+  need to get my complements in order
+  1. I = x*rcompl(x)
+  2. I = lcompl(x)*x
+
+
+  lcompl(rcompl(x)) = u                      # u = unknown.
+  lcompl(rcompl(x))*rcompl(x) = u*rcompl(x)  # multiply both sides by rcompl(x)
+  I = u*rcompl(x)                            # sub lcompl(y)*y = I on LHS where y = rcompl(x) from 2.
+  # Solution u = x from 1.
+  
+  lcompl(rcompl(x)) == x
+  
+  need to change regressive product as well.  
+  in agreement with lengyal, so that's good
+  http://projectivegeometricalgebra.com/projgeomalg.pdf
+  also see file:///Users/mewert/Downloads/The_AntiWedge_or_Regressive_Product.pdf
+  ∨(a,b) = lcompl(rcompl(a) ∧ rcompl(b))
+  
+  ∨(a,b) == rcompl(lcompl(a) ∧ lcompl(b)) == lcompl(rcompl(a) ∧ rcompl(b))
+
+  #
+  #
+  ==#
 end
 
