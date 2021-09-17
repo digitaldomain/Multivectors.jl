@@ -929,7 +929,8 @@ const left_complement = lc
     ⋆(k, 𝑖)
 
 Hodge star operator mapping k to it's Hodge dual relative to a given psuedovector 𝑖.
-Defined by k∧⋆(k) == (k⨽k)*𝑖 where k is generated from orthonormal 1-vectors.
+Defined by k∧⋆(k) == ⟨k,k⟩*𝑖 where k is generated from orthonormal 1-vectors.
+⟨⋅,⋅⟩ = determinant.  Implemented as k*~k.
 𝑖 is the unit psuedoscalar for a subspace containing k.
 """
 @generated function ⋆(b::B, i::BI) where {T, B<:Blade{T}, BI<:Blade}
@@ -952,7 +953,8 @@ end
     ⋆(k)
 
 Hodge star operator mapping k to it's Hodge dual.
-Defined by k∧⋆(k) == (k⋅k)*𝐼 where k is generated from orthonormal 1-vectors and 
+Defined by k∧⋆(k) == ⟨k,k⟩*𝐼 where k is generated from orthonormal 1-vectors and 
+⟨⋅,⋅⟩ = determinant.  Implemented as k*~k.
 𝐼 is the psuedoscalar for the generating vector space.
 """
 ⋆(b::B) where {T,B<:Blade{T}} = ⋆(b, pseudoscalar(b))

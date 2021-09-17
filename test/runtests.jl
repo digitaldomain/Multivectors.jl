@@ -316,13 +316,13 @@ end
   D = a + 2.0*pseudoscalar(e₁)
   @test scalarprod(A∧C, D) == scalarprod(A, lcontraction(C,D))
   @test scalarprod(D, C∧A) == scalarprod(rcontraction(D,C), A)
-  @test_broken rcontraction(C,D) == C[1]*D[1] + C[2]*D[1]  #!me not sure about the new right contraction, comes from mix of Lengyal and Browne
-  @test_broken rcontraction(D,C) == D*C[0] + D[1]*C[1] + D[4]*C[1] + D[4]*C[2]
+  @test rcontraction(C,D) == C[1]*D[1] + C[2]*D[1]  #!me not sure about the new right contraction, comes from mix of Lengyal and Browne
+  @test rcontraction(D,C) == D*C[0] + D[1]*C[1] + D[4]*C[1] + D[4]*C[2]
   @test lcontraction(C,D) == C[0]*D + C[1]*D[1] + C[1]*D[4] + C[2]*D[4]
-  @test_broken reverse(lcontraction(A,C)) == rcontraction(reverse(C), reverse(A))
-  @test_broken reverse(lcontraction(C,D)) == rcontraction(reverse(D), reverse(C))
-  @test_broken reverse(lcontraction(A,D)) == rcontraction(reverse(D), reverse(A))
-  @test_broken reverse(lcontraction(D,A)) == rcontraction(reverse(A), reverse(D))
+  @test reverse(lcontraction(A,C)) == rcontraction(reverse(C), reverse(A))
+  @test reverse(lcontraction(C,D)) == rcontraction(reverse(D), reverse(C))
+  @test reverse(lcontraction(A,D)) == rcontraction(reverse(D), reverse(A))
+  @test reverse(lcontraction(D,A)) == rcontraction(reverse(A), reverse(D))
   @test grades(A) == [0,2]
   show(A)
   @test first(A) == 1.0
@@ -355,9 +355,9 @@ end
   B = b
   C = 1.0e₁ + 2.0G4.e₁₂ + 3.0G4.e₁₂₃ + 1.1e₂ + 2.2G4.e₂₄
   @test a⋅(B∧C) == (a⋅B)∧C + involute(B)∧(a⋅C)
-  @test_broken rcontraction(B, a) == -a⋅involute(B)
+  @test rcontraction(B, a) == -a⋅involute(B)
   @test lcontraction(a, B) == 0.5*(a*B - involute(B)*a)
-  @test_broken rcontraction(B, a) == 0.5*(B*a - a*involute(B))
+  @test rcontraction(B, a) == 0.5*(B*a - a*involute(B))
 
   # less common multivector products
   A,B = Multivector(2.0e₁+1.0e₁₃), Multivector(2.0e₁+3.0e₂)

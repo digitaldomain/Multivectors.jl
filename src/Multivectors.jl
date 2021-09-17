@@ -33,6 +33,7 @@ rcontraction,
 ⨽,
 symmetricdot,
 ∙,
+⊖,
 kvectors,
 involute,
 cayley_table,
@@ -337,6 +338,7 @@ end
 Base.reverse(a::M) where M<:Multivector = a.s+mapreduce(reverse, +, a.B; init=M())
 Base.reverse(s::T) where T<:Real = s
 Base.:~(k::K) where {K<:CliffordNumber} = reverse(k)
+Base.:~(s::S) where {S<:Real} = reverse(s)
 
 involute(v::CliffordNumber) = mapreduce(vᵢ->(-1)^grade(vᵢ)*vᵢ, +, v)
 involute(A::M) where {T, M<:Multivector{T}} = M(A.s, map(((k,b),)->(-one(T))^k*b, enumerate(kvectors(A))))
@@ -373,13 +375,29 @@ LinearAlgebra.:(⋅)(A::N, b::T) where {T<:Real, N<:Multivector} = A⋅Multivect
 LinearAlgebra.:(⋅)(A::N, b::T) where {T<:Real, S, N<:Union{KVector{S}, Blade{S}}} = zero(b)
 LinearAlgebra.:(⋅)(a::T1, b::T2) where {T1<:Real, T2<:Real} = a*b
 
-rcontraction(A,B) = A∨rc(B)
-rcontraction(A::C, s::S) where {C<:CliffordNumberR, S<:Real} = A*s
-rcontraction(A::C, s::S) where {C<:CliffordNumberR, T, S<:Multivector{T,0}} = A*s[0]
-rcontraction(A::C, s::S) where {C<:Real, T, S<:Multivector{T,0}} = A*s[0]
-rcontraction(A::C, s::S) where {U, C<:Multivector{U,0}, T, S<:Multivector{T,0}} = A[0]*s[0]
-rcontraction(s::S, A::M) where {S<:Real, M<:Multivector} = sum(map(b->rcontraction(s, b), A)) 
-rcontraction(s::S, A::M) where {U, S<:Multivector{U,0}, M<:Multivector} = sum(map(b->rcontraction(s, b), A)) 
+"""
+    ⊖(A,B)
+
+Interior product from John Browne ( original Grassmann ).  
+⊖(A,B) = A∨rB̄   where B̄ is the right complement.
+"""
+⊖(A,B) = A∨rc(B)
+
+⊖(A::C, s::S) where {C<:CliffordNumberR, S<:Real} = A*s
+⊖(A::C, s::S) where {C<:CliffordNumberR, T, S<:Multivector{T,0}} = A*s[0]
+⊖(A::C, s::S) where {C<:Real, T, S<:Multivector{T,0}} = A*s[0]
+⊖(A::C, s::S) where {U, C<:Multivector{U,0}, T, S<:Multivector{T,0}} = A[0]*s[0]
+⊖(s::S, A::M) where {S<:Real, M<:Multivector} = sum(map(b->⊖(s, b), A)) 
+⊖(s::S, A::M) where {U, S<:Multivector{U,0}, M<:Multivector} = sum(map(b->⊖(s, b), A)) 
+
+
+"""
+    rcontraction(A, B)
+    ⨽(A, B)
+
+standard right contraction.
+"""
+rcontraction(A, B) = ~(~(B)⋅~(A))
 const ⨽ = rcontraction
 
 """
