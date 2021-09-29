@@ -1,8 +1,7 @@
 name = "Multivectors"
 uuid = "7984e3fa-4652-481f-a8e5-141db0974c74"
 authors = ["Michael Alexander Ewert <mewert@d2.com>"]
-version = "0.3.0"
-
+version = "0.3.1"
 
 [deps]
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"

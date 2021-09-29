@@ -396,6 +396,33 @@ or
 left_complement(right_complement(a)∧right_complement(b))  
 """
 ∨(a, b) = rc(lc(a)∧lc(b))
+#!me ∨(a, b) = ⋆(⋆(a)∧⋆(b))
+
+#⋅(a::A, b::B) where {TA,TB,A<:Blade{TA}, B<:Blade{TB}} = ⋆(⋆(b)∧a)
+
+#!me
+#==
+some notes on vee, star and inner product
+John Browne: rc(A∧B) == rc(A)∨rc(B) is axiomatic and needed to develop Grassmann Algebra for any metric
+John Browne: A⋅B == A∨rc(B)
+rc may be something more in later chapters though
+
+<https://scholarsarchive.byu.edu/cgi/viewcontent.cgi?article=1668&context=facpub>
+"Teaching electr eaching electromagnetic field theor omagnetic field theory using diff y using differential forms"
+A⋅B = ⋆(⋆B∧A)
+a = b∧(b⋅a) + b⋅(b∧a)
+
+
+using John Browne we end up with 1e₁₂⋅1e₁₂ = 1, which we do not want
+using the Teaching electo... differential forms we get the standard dot product.  Maybe we should use that?
+TODO: define ⋅(A, B) = ⋆(⋆B∧A) and then see if ∨ and Browne works out
+or maybe this already works out?  add tests and see where it breaks, if it passes, yay.
+hmmm... would be sooo nice if this worked out:  Uses everything above
+A⋅B == A∨⋆B == ⋆(⋆B∧A) == ⋆⋆B∨⋆A
+
+First attempt didn't work well.  seems to break in ++++ ===> 1e₃⋅1e₃ = -1
+
+==#
 
 ∨(s::T, b::C) where {T<:Real, C<:CliffordNumber} = zero(s)
 ∨(b::C, s::T) where {T<:Real, C<:CliffordNumber} = zero(s)
@@ -598,21 +625,20 @@ Base.:^(B::T, n::Integer) where T<:CliffordNumber = prod([B for i in 1:n])
 
 Taylor series approx exponential of a CliffordNumber around 0
 """
-function Base.exp(M::T; tol = eps(fieldtype(M))) where T<:CliffordNumber
+function Base.exp(M::T; n = 20, tol = eps(fieldtype(M))) where T<:CliffordNumber
   FT = fieldtype(M)
   d = 1.0
   eᴹ = one(FT)
   emf = one(FT)
   f = one(FT)
-  guard = 15
 
-  while guard > 0
+  while n > 0
     emf *= M/f
     f += one(FT)
     eᴹ′ = eᴹ + emf
     d = LinearAlgebra.norm_sqr(eᴹ′-eᴹ)
     eᴹ = eᴹ′
-    guard -= 1
+    n -= 1
     abs(d) > tol || break
   end
 
@@ -628,22 +654,21 @@ Taylor series approx natural logarithm of a CliffordNumber around 1.
 1 is choosen as expansion point for symmetry with exp at 0.
 e⁰ == 1, log(e⁰) == log(1) == 0 
 """
-function Base.log(M::T; tol = eps(fieldtype(M))) where T<:CliffordNumber
+function Base.log(M::T; n = 20, tol = eps(fieldtype(M))) where T<:CliffordNumber
   FT = fieldtype(M)
   d = 1.0
   logM = zero(FT)
   logMf = -one(FT)
   f = one(FT)
-  guard = 15
   M_1 = M - one(FT)
 
-  while guard > 0
+  while n > 0
     logMf *= -M_1
     logM′ = logM + logMf/f
     f += one(FT)
     d = LinearAlgebra.norm_sqr(logM′-logM)
     logM = logM′
-    guard -= 1
+    n -= 1
     d > tol || break
   end
 

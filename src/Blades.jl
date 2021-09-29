@@ -829,6 +829,7 @@ end
 ∧(a::T,::Type{B}) where {T<:Number, B<:Blade} = B(a)
 
 import LinearAlgebra: ⋅
+#!me ⋅(a::A, b::B) where {TA,TB,A<:Blade{TA}, B<:Blade{TB}} = ⋆(⋆(b)∧a)
 @generated function ⋅(a::A, b::B) where {TA,TB,A<:Blade{TA}, B<:Blade{TB}} 
   sa = subspace(a)
   sb = subspace(b)
@@ -943,7 +944,7 @@ Defined by k∧⋆(k) == (k⨽k)*𝑖 where k is generated from orthonormal 1-ve
   # then adjust with sign of k⋅k
   #sflip = sflip*swap_parity(vcat(sb,sb))[2]
   #sflip = sflip*sign(b⨽b)
-  :(T($sflip)*pmul(one(b),~one(b))*sign(b)*abs(pmul(b*i)))
+  :(T($sflip)*pmul(one(b),~one(b))*sign(b)*abs(pmul(b,i)))
 end
 
 ⋆(b::B, i::Type{BI}) where {T, B<:Blade{T}, BI<:Blade} = ⋆(b, i(one(T)))
