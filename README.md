@@ -172,6 +172,24 @@ This construction extends to higher and lower dimensions and doesn't involve com
 Therefore it's called a rotor in geometric algebra and not a quaternion.
 Geometrically it is better to view rotors as a sequence of reflections to understand how it operates on vectors not parallel to the plane of rotation.
 
+### Cayley map
+
+We can take our rotor construction another step further to create a simple mapping between rotors and bivectors.  
+
+First we ask how to construct a rotor from a single vector and the plane of rotation.  
+
+We can create a second vector orthogonal to our first vector in the plane of rotation.  This is accomplished by multiplying our vector with the bivector of the rotation plane.  Now we can use the two vectors in a simlilar fashion as before.  
+
+`q = (a + a*B)/(a - a*B)`  
+
+We made two vectors by adding and subtracting a vector orthogonal to `a`.  This way we can choose a bivector `B` scaled by `tan(θ)`.  The trigonometry works out to give us the correct `q` for the angle `θ`.  
+
+Simplifying by pulling out `a` and adding the scaling factor gives us `q = (1 + tan(θ)B̂)/(1 - tan(θ)B̂)`  
+
+This is the Cayley map and only depends on a rotation bivector.  
+
+Using similar arguments we can arrive at the reverse map to recover the bivector from the rotor.  `B = (1 + q)/(1 - q)`
+
 ### Example
 
 Construct a quaternion/rotor taking 1-vector 1.0e₁ to vector half45
