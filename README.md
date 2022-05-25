@@ -243,6 +243,13 @@ In order for operations to have expected results, a numerical coefficient is req
     julia> (1 * e₃) ∧ (1 * e₁)
     -1e₁₃
 
+Some methods and operators are defined in the LinearAlgebra package.
+
+    julia> using LinearAlgebra
+    
+    julia> normalize(2e₁)
+    1e₁
+
 ## Other Operators
 
 Depending on the specific Geometric Algebra in use it may be desireable to define other operators.  For example `meet` and `join` operators are very useful, but will differ depending on the context.  Where there are multiple possible definitions/implementations of an operator, `Multivectors` chooses to omit such an operator rather than include it.
