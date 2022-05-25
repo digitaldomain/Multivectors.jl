@@ -213,6 +213,36 @@ Rotors can be constructed using half-angle of trig functions, like quaternions.
     julia> cos(π/8) - sin(π/8)*1.0e₁₂ == q
     true
 
+### Entering values in the REPL
+
+Some non-keyboard characters are required for this package.  Here are some examples of how to enter them.
+
+To type e₁, enter:
+
+    e\_1[tab]
+
+To type ∧ (wedge), enter:
+
+    \wedge[tab]
+
+### Gotchas
+
+Note that e₁, e₂, ... are types, not values.  For example:
+
+    julia> typeof(e₁)
+    UnionAll
+
+In order for operations to have expected results, a numerical coefficient is required
+
+    julia> e₃ ∧ e₁
+    Nothing
+
+    julia> 1e₃ ∧ 1e₁
+    -1e₁₃
+
+    julia> (1 * e₃) ∧ (1 * e₁)
+    -1e₁₃
+
 ## Other Operators
 
 Depending on the specific Geometric Algebra in use it may be desireable to define other operators.  For example `meet` and `join` operators are very useful, but will differ depending on the context.  Where there are multiple possible definitions/implementations of an operator, `Multivectors` chooses to omit such an operator rather than include it.
